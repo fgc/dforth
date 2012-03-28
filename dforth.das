@@ -4,21 +4,21 @@
 	;; eax -> a accumulator
 	;; ebp -> z return stack
 	
-	.macro NEXT 		;jump to the address stored at the location pointed to by i
+	macro NEXT 		;jump to the address stored at the location pointed to by i
 	set a, (i)
 	add i, 1
 	set PC, a
-	.endm
+	endm
 
-	.macro PUSHRSP reg
+	macro PUSHRSP reg
 	set z, (z - 2)
 	set (z), \reg
-	.endm
+	endm
 
-	.macro POPRSP reg
+	macro POPRSP reg
 	set \reg, (z)
 	set z, (z + 2)
-	.endm
+	endm
 
 DOCOL:
 	PUSHRSP i		;push i on to the return stack
@@ -32,22 +32,32 @@ _start:
 	set i, cold_start	;initialize interpreter
 	NEXT			;go!
 cold_start:
-	data QUIT
+	wdat QUIT
 
 
-	.set link, 0
+	let link, 0
 
 
-	.macro defword name, namelen, flags=0, label
+	macro defword name, namelen, flags=0, label
 name_\label:
-	data link
-	data link,name_\label
-	data \flags+\namelen
-	data "\name"
+	wdat link
+	let link, name_\label
+	dat \flags+\namelen
+	dat "\name"
 \label:
-	data DOCOL
-	.endm
+	wdat DOCOL
+	endm
 
+	macro defcode name, namelen, flags=0, label
+name_\label:
+	wdat link
+	let link, name_\label
+	dat \flags+\namelen
+	dat "\name"
+\label:
+	dat code_\label
+code_\label:
+	endm
 	
 var_S0:
 	dat 0
