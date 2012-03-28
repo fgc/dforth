@@ -1,12 +1,14 @@
 	;; Forth implementation based on jonesforth for Notch's dcpu
 	
-	;; esi -> i source
-	;; eax -> a accumulator
-	;; ebp -> z return stack
+	;; special reguisters:
+	;; i source
+	;; z return stack pointer
+
+	;; let's assume we can do macros, we can preproccess them later if not
 	
 	macro NEXT 		;jump to the address stored at the location pointed to by i
 	set a, (i)
-	add i, 1
+	add i, 2
 	set PC, a
 	endmacro
 
@@ -120,7 +122,77 @@ code_\label:
 	push c
 	NEXT
 
-var_S0:
-	dat 0
+	defcode "?DUP",4,0,QDUP
+	set a, (sp)
+	ifn a, 0
+	push a
+	NEXT
+
+	defcode "1+",2,0,INCR
+	add (sp),1
+	NEXT
+
+	defcode "1-",2,0,DECR
+	sub (sp),1
+	NEXT
+
+	defcode "2+",2,0,INCR2
+	add (sp),2
+	NEXT
+
+	defcode "2-",2,0,DECR2
+	sub (sp),2
+	NEXT
+
+	defcode "+",1,0,ADD
+	pop a
+	add (sp), a
+	NEXT
+	
+	defcode "-",1,0,SUB
+	pop a
+	sub (sp), a
+	NEXT
+	
+	defcode "*",1,0,MUL
+	pop a
+	pop b
+	mul a, b
+	push a
+	NEXT
+
+	;; TODO comparisons and bitwise stuff
+
+	defcode "EXIT",4,0,EXIT
+	POPRSP i
+	NEXT
+
+	defcode "LIT",3,0,LIT
+	set a,(i)
+	add i, 2
+	push a
+	NEXT
+
+	;; TODO memory management stuff
+
+	macro defvar name,namelen,flags,label,initial
+	defcode \name,\namelen,\flags,\label
+	push var_\name
+	NEXT
+var_\name:
+	wdat initial
+	endmacro
+
+	defvar "STATE",5,0,STATE,0
+	defvar "HERE",4,0,HERE,0
+	defvar "LATEST",6,0,LATEST,name_SYSCALL0 // SYSCALL0 must be last in built-in dictionary
+	defvar "S0",2,0,SZ,0
+	defvar "BASE",4,0,BASE,10
+
+	;; TODO built in constants
+
+
+
+
 rsp:
 	dat 0
