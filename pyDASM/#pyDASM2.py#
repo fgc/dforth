@@ -134,6 +134,7 @@ def do_set(set):
     
 
 def do_dat(dat):
+    op = 
     print "dat:", do_operands(dat.what[1:])
 
 def do_label(label):
