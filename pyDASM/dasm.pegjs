@@ -1,25 +1,55 @@
 dasm
-    = lines:(op / label)+ /*{
+    = lines:(op / label)+ {
 	var labels = {};
 	var offset = 0;
 	var output = [];
+
+        function predelabelize(param) {
+            if (param.symbaddr != undefined) {
+                 return [30,param.symbaddr];
+            }
+	    if (param.label != undefined) {
+	         return [31,param];
+	    }
+	    return param;
+	}
+	
+	function postdelabelize(program) {
+	    for (var pos in program) {
+	        var cell = program[pos];
+		if (cell.label != undefined) {
+		    program[pos] = labels[cell.label];
+		}
+	    }
+	    return program;	    
+	}
+
 	for (var i in lines) {
 	    line = lines[i];
-	    console.log("line:" + line);
+	    console.log("line:" + JSON.stringify(line));
 	    if (line.label != undefined) {
-		labels[line.label] = offset;
+		labels[line.label.label] = offset;
 	    }
 	    else {
 		var oooo = line[0];
-		var aaaaaa = line[1];
-		var bbbbbb = line[2];
-		output.push(((0x0 | oooo) | aaaaaa << 4) | bbbbbb << 10);
+		var aaaaaa = predelabelize(line[1]);
+		var bbbbbb = predelabelize(line[2]);
+                console.log(JSON.stringify([]))
+		output.push(((0x0 | oooo) | aaaaaa[0] << 4) | bbbbbb[0] << 10);
+		if (aaaaaa.length == 2) {
+		   output.push(aaaaaa[1]);
+		   offset++;
+                } 
+		if (bbbbbb.length == 2) {
+		   output.push(bbbbbb[1]);
+		   offset++;
+                } 
 		offset++;
 	    }
 	}
-	
-	return [labels, offset, output];
-    }*/
+	postdelabelize(output);
+	return output;
+    }
 
 op  
     = _ instr:instr _ op1:operand _ "," _  op2:operand _ {return [instr,op1, op2];}
