@@ -1,0 +1,31 @@
+<html>
+  <head>
+    <script src="dasm.js"></script>
+    <script src="dcpu.js"></script>
+    <script>
+      cpu = new DCPUCore();
+      cpu.__init__();
+
+      function load() {
+          cpu.__init__();
+          program = Dasm.parse(document.getElementById("code").value);
+          cpu.load(program);
+      }
+      
+      function dostep() {
+          cpu.tick();
+          document.getElementById("debug").innerHTML = "pc: " + cpu.pc + "<br>";
+          document.getElementById("debug").innerHTML += "sp: " + cpu.sp + "<br>";
+          document.getElementById("debug").innerHTML += "o: " + cpu.o + "<br>";
+          document.getElementById("debug").innerHTML += JSON.stringify(cpu.registers) + "<br>";
+
+      }
+    </script>
+  </head>
+  <body>
+    <textarea id="code" cols="40" rows="20"></textarea>
+    <input type="button" name="load" value="Load" onclick="load()">
+    <input type="button" name="step" value="Step" onclick="dostep()">
+    <div id="debug">Debug:<br></div>
+  </body>
+</html>

@@ -8,7 +8,7 @@ function DCPUCore() {
     this._MEM_DEFAULT = 0;
     this._REG_DEFAULT = 0;
     this._PC_DEFAULT = 0;
-    this._SP_DEFAULT = 0;
+    this._SP_DEFAULT = 0xFFFF;
     this._CPU_MHZ = 100;
     
     //OpCodes
@@ -80,7 +80,7 @@ DCPUCore.prototype._init_cpu = function (size, num_registers) {
     this.registers = this._buffer(this._NUM_REGISTERS, this._REG_DEFAULT);
     this.pc = this._PC_DEFAULT;
     this.sp = this._SP_DEFAULT;
-    this.o = false;
+    this.o = 0x0000;
 };
 
 DCPUCore.prototype._has_overflown = function (val) {
@@ -88,7 +88,7 @@ DCPUCore.prototype._has_overflown = function (val) {
 };
 
 DCPUCore.prototype._overflown = function (val) {
-    this.o = this._has_overflown(val);
+    this.o = this._has_overflown(val)?0x0001:0x0000;
     return val & this._MAX_VAL;
 };
 
@@ -206,10 +206,8 @@ DCPUCore.prototype._set = function (target,value) {
     case 21:
     case 22:
     case 23:
-	console.log("Memory + offset register");
-	console.log("pc: " + this.pc);
-        console.log("finaltarget:" + (this.memory[ this.pc + 1 ] + target - 16));
-	this.memory[this.memory[this.pc+1]+target-16] = value;
+        console.log("finaltarget:" + (this.destpointer));
+	this.memory[this.destpointer] = value;
 	break;
     case 24:
 	this.memory[this.sp++] = value;
@@ -218,6 +216,7 @@ DCPUCore.prototype._set = function (target,value) {
 	this.memory[this.sp] = value;
 	break;
     case 26:
+	console.log("push set: " + this.sp + " " + (this.sp -1));
 	this.memory[this.sp--] = value;
 	break;
     case 27:
@@ -230,7 +229,7 @@ DCPUCore.prototype._set = function (target,value) {
 	this.o = value;
 	break;
     case 30:
-	this.memory[this.memory[this.pc+1]] = value;
+	this.memory[this.destpointer] = value;
 	break;
 	//Everything else would be assigning to a literal value, silently fails.
     }
@@ -247,65 +246,67 @@ DCPUCore.prototype._get = function (target) {
 
 DCPUCore.prototype._tget = function (target) {
 	//ALWAYS GET A BEFORE B - IF BOTH DO PC++ THEN IT WILL FAIL IF YOU GET B BEFORE A.
-	switch(target) {
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-		case 5:
-		case 6:
-		case 7:
-			return this.registers[target];
-			break;
-		case 8:
-		case 9:
-		case 10:
-		case 11:
-		case 12:
-		case 13:
-		case 14:
-		case 15:
-			return this.memory[this.registers[target-8]];
-	                break;
-		case 16:
-		case 17:
-		case 18:
-		case 19:
-		case 20:
-		case 21:
-		case 22:
-		case 23:
-			return this.memory[this.memory[this.pc++]+target-16];
-			break;
-		case 24:
-	                return this.memory[this.sp++];
-			break;
-		case 25:
-			return this.memory[this.sp++];
-			break;
-		case 26:
-			return this.memory[--this.sp];
-			break;
-		case 27:
-			return this.sp;
-			break;
-		case 28:
-			return this.pc;
-			break;
-		case 29:
-			return O;
-			break;
-		case 30:
-                        return this.memory[this.memory[this.pc++]];
-			break;
-		case 31:
-	                return this.memory[this.pc++];
-			break;
-		default:
-			return (target-32);
-			break;
-	}
+    switch(target) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+	return this.registers[target];
+	break;
+    case 8:
+    case 9:
+    case 10:
+    case 11:
+    case 12:
+    case 13:
+    case 14:
+    case 15:
+	return this.memory[this.registers[target-8]];
+	break;
+    case 16:
+    case 17:
+    case 18:
+    case 19:
+    case 20:
+    case 21:
+    case 22:
+    case 23:
+	this.lastpointer = this.memory[this.pc++] + this.registers[target-16];
+	return this.memory[this.lastpointer];
+	break;
+    case 24:
+	return this.memory[this.sp++];
+	break;
+    case 25:
+	return this.memory[this.sp++];
+	break;
+    case 26:
+	return this.memory[--this.sp];
+	break;
+    case 27:
+	return this.sp;
+	break;
+    case 28:
+	return this.pc;
+	break;
+    case 29:
+	return O;
+	break;
+    case 30:
+	this.lastpointer = this.memory[this.pc++];
+        return this.memory[this.lastpointer];
+	break;
+    case 31:
+	return this.memory[this.pc++];
+	break;
+    default:
+	return (target-32);
+	break;
+    }
 };
 
 DCPUCore.prototype._setval = function (vc, f, justcheck) {
@@ -461,16 +462,19 @@ DCPUCore.prototype._decSP = function () {
 };
 
 DCPUCore.prototype.tick = function () {
-    var v = this.memory[this.pc];
-    this._incPC();
+    var v = this.memory[this.pc++];
+    this.lastpointer = undefined;
+    this.destpointer = undefined;
     var op = (v & this._OP_PORTION) >>> this._OP_POSITION;
     var a = (v & this._AV_PORTION) >>> this._AV_POSITION;
     var b = (v & this._BV_PORTION) >>> this._BV_POSITION;
     console.log("op:" + op);
     console.log("a:" + a);
     console.log("b:" + b);
-
     var aval = this._get(a);
+    if (this.lastpointer != undefined) {
+	this.destpointer = this.lastpointer;
+    }
     var bval = this._get(b);
 
     console.log("aval:" + aval);

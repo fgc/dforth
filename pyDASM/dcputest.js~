@@ -1,7 +1,0 @@
-function testSet () {
-    cpu = new DCPUCore();
-    program = Dasm.parse("set a , 1");
-    cpu.load(program);
-    cpu.tick();
-    assertEquals("set a, 1", cpu.registers[0], 1);
-}
