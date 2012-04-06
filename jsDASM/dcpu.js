@@ -210,7 +210,7 @@ DCPUCore.prototype._set = function (target,value) {
 	this.memory[this.destpointer] = value;
 	break;
     case 24:
-	this.memory[this.sp++] = value;
+	return;
 	break;
     case 25:
 	this.memory[this.sp] = value;
@@ -279,13 +279,13 @@ DCPUCore.prototype._tget = function (target) {
 	return this.memory[this.lastpointer];
 	break;
     case 24:
-	return this.memory[this.sp++];
+	return this.memory[++this.sp];
 	break;
     case 25:
-	return this.memory[this.sp++];
+	return this.memory[this.sp];
 	break;
     case 26:
-	return this.memory[--this.sp];
+	return;
 	break;
     case 27:
 	return this.sp;
