@@ -1,6 +1,7 @@
 <html>
   <head>
     <script src="dasm.js"></script>
+    <script src="dscheme.js"></script>
     <script src="dcpu.js"></script>
     <script>
       cpu = new DCPUCore();
@@ -8,7 +9,7 @@
 
       function load() {
           cpu.__init__();
-          program = Dasm.parse(document.getElementById("code").value);
+          program = dasm.parse(document.getElementById("code").value);
           cpu.load(program);
       }
       

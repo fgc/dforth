@@ -15,6 +15,8 @@ dasm
 	}
 	
 	function postdelabelize(program) {
+	    console.log("pdlabel labels: ", labels);
+	    console.log("pdlabel program: ", program);
 	    for (var pos in program) {
 	        var cell = program[pos];
 		if (cell.label != undefined) {
@@ -55,7 +57,7 @@ op
     = _ instr:instr _ op1:operand _ "," _  op2:operand _ {return [instr,op1, op2];}
 
 label
-    = _ ":" sym:symbol _ {return {'label': sym}}
+    = _ ":" sym:symbol _ {return {'label': sym};}
 
 instr
     = "set" {return 1;}
@@ -78,8 +80,8 @@ operand
     = symbol / literal / address
 
 symbol
-    =  symbol:[a-zA-Z_]+[a-zA-Z0-9_]* {
-	s = symbol.join("");
+    =   start:[a-zA-Z_] rest:[a-zA-Z0-9_]* {
+	s = start + rest.join("");
 	special = {"a":0,"b":1,"c":2,"x":3,"y":4,"z":5,"i":6,"j":7,
 		   "pop":24,"peek":25,"push":26,
 		   "sp":27,"pc":28,"o":29};
@@ -115,6 +117,7 @@ address
 	}
     }
     / "[" _ literal:literal _ "+" _ symbol:symbol _ "]" {
+	console.log("reg off addr: " , literal, " ", symbol);
 	var addr = 0;
 	if (literal.lenght == 1) {
 	    addr = literal[0] - 32;
