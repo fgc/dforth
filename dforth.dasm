@@ -7,14 +7,14 @@
 #defmacro NEXT() {		//jump to the address stored at the location pointed to by i
         var r = "";
 	r += "set a, [i]\n";
-	r += "add i, 2\n";
+	r += "add i, 1\n";
 	r += "set PC, a\n";
 	return r;
 }
 
 #defmacro PUSHRSP(reg) {
 	var r = "";
-	r += "set z, [z - 2]\n";
+	r += "sub z, 1\n";
 	r += "set [z]," + reg + "\n";
 	return r;
 }
@@ -22,12 +22,14 @@
 #defmacro POPRSP(reg) {
 	var r = "";
 	r += "set " + reg + ", [z]\n";
-	r += "set z, [z + 2]\n";
+	r += "add z, 1\n";
 	return r;
 }
 
+set pc, start
+
 :DOCOL
-	PUSHRSP(i)		;push i on to the return stack
+	PUSHRSP("i")		;push i on to the return stack
 	add a,1			;a points to the codeword
 	set i,a			;now i points to the first data word
 	NEXT()
@@ -48,7 +50,7 @@
 	r += "dat " + link + "\n";
 	link = "name_"+label;
 	r += "dat " + (flags + name.length) + "\n";
-	r += "dat " + name + "\n";
+	r += "dat \"" + name + "\"\n";
 	r += ":" + label + "\n";
 	if (!iscode) {
 	   r += "dat DOCOL\n";
@@ -72,7 +74,7 @@
 	NEXT()
 
 	defword ("DUP",0,"DUP", true)
-	set a, [SP]		;duplicate top of stack
+	set a, peek		;duplicate top of stack
 	set push, a
 
 	defword ("OVER",0,"OVER", true)
@@ -82,7 +84,7 @@
 	set push, a			;on top
 	NEXT()
 
-	defword ("ROT",0,"ROT, true")
+	defword ("ROT",0,"ROT", true)
 	set a, pop 
 	set b, pop 
 	set c, pop 
@@ -108,7 +110,7 @@
 	defword ("2DUP",0,"TWODUP", true)
 	set a, peek
 	set b, sp
-	add b, 2
+	add b, 1
 	set b,[b]
 	set push, b
 	set push, a
@@ -118,10 +120,10 @@
 	set a, pop 
 	set b, pop 
 	set c, pop 
-	set d, pop 
+	set x, pop 
 	set push, b
 	set push, a
-	set push, d
+	set push, x
 	set push, c
 	NEXT()
 
@@ -172,7 +174,7 @@
 
 	defword ("LIT",0,"LIT", true)
 	set a,[i]
-	add [i], 2
+	add [i], 1
 	set push, a
 	NEXT()
 
@@ -184,11 +186,12 @@
 	r += macros["NEXT"]();
 	r += ":var_" + name + "\n";
 	r += "dat " + initial + "\n";
+	return r;
 }
 
 	defvar ("STATE",0,"STATE",0)
 	defvar ("HERE",0,"HERE",0)
-	defvar ("LATEST",0,"LATEST","name_SYSCALL0") ;this must be the last word
+	defvar ("LATEST",0,"LATEST","SYSCALL0") ;this must be the last word
 	defvar ("S0",0,"SZ",0)
 	defvar ("BASE",0,"BASE",10)
 
