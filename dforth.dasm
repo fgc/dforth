@@ -1,25 +1,29 @@
-	;; Forth implementation based on jonesforth for Notch's dcpu
-	
-	;; special reguisters:
-	;; i source
-	;; z return stack pointer
+;; Forth implementation based on jonesforth for Notch's dcpu
 
-	;; let's assume we can do macros, we can preproccess them later if not
+;; special reguisters:
+;; i source
+;; z return stack pointer
 
-#macro NEXT() {		;jump to the address stored at the location pointed to by i
-	set a, [i]
-	add i, 2
-	set PC, a
+#defmacro NEXT() {		//jump to the address stored at the location pointed to by i
+        var r = "";
+	r += "set a, [i]\n";
+	r += "add i, 2\n";
+	r += "set PC, a\n";
+	return r;
 }
 
-#macro PUSHRSP(reg) {
-	set z, [z - 2]
-	set [z], \reg
+#defmacro PUSHRSP(reg) {
+	var r = "";
+	r += "set z, [z - 2]\n";
+	r += "set [z]," + reg + "\n";
+	return r;
 }
 
-#macro POPRSP(reg) {
-	set \reg, [z]
-	set z, [z + 2]
+#defmacro POPRSP(reg) {
+	var r = "";
+	r += "set " + reg + ", [z]\n";
+	r += "set z, [z + 2]\n";
+	return r;
 }
 
 :DOCOL
@@ -38,156 +42,155 @@
 	dat QUIT
 
 
-#let $link, 0
-
-#macro defword (name, namelen, flags, label) {
-:name_\label
-	dat $link
-	#let $link, name_\label
-	dat \flags+\namelen
-	dat \name
-:\label
-	dat DOCOL
+#defmacro defword (name flags label iscode) {
+        var r = "";
+	r += ":name_" + label + "\n";
+	r += "dat " + link + "\n";
+	link = "name_"+label;
+	r += "dat " + (flags + name.length) + "\n";
+	r += "dat " + name + "\n";
+	r += ":" + label + "\n";
+	if (!iscode) {
+	   r += "dat DOCOL\n";
+	    } 
+	else {
+	   r += "dat code_" + label + "\n";
+	   r += ":code_" + label + "\n";
 	}
+	return r;
+} [var link = "0";]
 
-#macro defcode (name, namelen, flags, label) {
-:name_\label
-	dat $link
-	#let $link, name_\label
-	dat \flags+\namelen
-	dat name
-:\label
-	dat code\label
-:code_\label
-}
-
-	defcode("DROP",4,0,DROP)
-	pop(a)		;drop top of stack
+	defword("DROP",0,"DROP", true)
+	set a, pop		;drop top of stack
 	NEXT()
 
-	defcode("SWAP",4,0,SWAP)
-	pop(a)		;drop top of stack
-	pop(b)		;and the next value too
-	push(a)			;now the first is the second
-	push(b)			;and the second is first
+	defword("SWAP",0,"SWAP", true)
+	set a, pop		;drop top of stack
+	set b, pop		;and the next value too
+	set push, a			;now the first is the second
+	set push, b			;and the second is first
 	NEXT()
 
-	defcode ("DUP",3,0,DUP)
+	defword ("DUP",0,"DUP", true)
 	set a, [SP]		;duplicate top of stack
-	push(a)
+	set push, a
 
-	defcode ("OVER",4,0,OVER)
-	set a, [sp + 2]		;copy the second element of the stack
-	push(a)			;on top
+	defword ("OVER",0,"OVER", true)
+	set a, sp
+	add a, 1
+	set a, [a]		;copy the second element of the stack
+	set push, a			;on top
 	NEXT()
 
-	defcode ("ROT",3,0,ROT)
-	pop(a) 
-	pop(b) 
-	pop(c) 
-	push(b) 
-	push(a) 
-	push(c) 
+	defword ("ROT",0,"ROT, true")
+	set a, pop 
+	set b, pop 
+	set c, pop 
+	set push, b 
+	set push, a 
+	set push, c 
 	NEXT()
 
-	defcode ("-ROT",4,0,NROT)
-	pop(a) 
-	pop(b) 
-	pop(c) 
-	push(a) 
-	push(c) 
-	push(b) 
+	defword ("-ROT",0,"NROT", true)
+	set a, pop 
+	set b, pop 
+	set c, pop 
+	set push, a 
+	set push, c 
+	set push, b 
 	NEXT()
 
-	defcode ("2DROP",5,0,TWODROP)
-	pop(a) 
-	pop(a) 
+	defword ("2DROP",0,"TWODROP", true)
+	set a, pop 
+	set a, pop 
 	NEXT()
 
-	defcode ("2DUP",4,0,TWODUP)
-	set a,[SP]
-	set b,[SP + 2]
-	push(b)
-	push(a)
+	defword ("2DUP",0,"TWODUP", true)
+	set a, peek
+	set b, sp
+	add b, 2
+	set b,[b]
+	set push, b
+	set push, a
 	NEXT()
 
-	defcode ("2SWAP",5,0,TWOSWAP)
-	pop(a) 
-	pop(b) 
-	pop(c) 
-	pop(d) 
-	push(b)
-	push(a)
-	push(d)
-	push(c)
+	defword ("2SWAP",0,"TWOSWAP", true)
+	set a, pop 
+	set b, pop 
+	set c, pop 
+	set d, pop 
+	set push, b
+	set push, a
+	set push, d
+	set push, c
 	NEXT()
 
-	defcode ("?DUP",4,0,QDUP)
-	set a, [SP]
+	defword ("?DUP",0,"QDUP", true)
+	set a, peek
 	ifn a, 0
-	push(a)
+	set push, a
 	NEXT()
 
-	defcode ("1+",2,0,INCR)
-	add [SP],1
+	defword ("1+",0,"INCR", true)
+	add peek,1
 	NEXT()
 
-	defcode ("1-",2,0,DECR)
-	sub [SP],1
+	defword ("1-",0,"DECR", true)
+	sub peek,1
 	NEXT()
 
-	defcode ("2+",2,0,INCR2)
-	add [SP],2
+	defword ("2+",0,"INCR2", true)
+	add peek,2
 	NEXT()
 
-	defcode ("2-",2,0,DECR2)
-	sub [SP],2
+	defword ("2-",0,"DECR2", true)
+	sub peek,2
 	NEXT()
 
-	defcode ("+",1,0,ADD)
-	pop(a)
-	add [SP], a
+	defword ("+",0,"ADD", true)
+	set a, pop
+	add peek, a
 	NEXT()
 	
-	defcode ("-",1,0,SUB)
-	pop(a)
-	sub [SP], a
+	defword ("-",0,"SUB", true)
+	set a, pop
+	sub peek, a
 	NEXT()
 	
-	defcode ("*",1,0,MUL)
-	pop(a) 
-	pop(b) 
+	defword ("*",0,"MUL", true)
+	set a, pop 
+	set b, pop 
 	mul a, b
-	push(a)
+	set push, a
 	NEXT()
 
 	;; TODO comparisons and bitwise stuff
 
-	defcode ("EXIT",4,0,EXIT)
+	defword ("EXIT",0,"EXIT", true)
 	POPRSP(i)
 	NEXT()
 
-	defcode ("LIT",3,0,LIT)
+	defword ("LIT",0,"LIT", true)
 	set a,[i]
 	add [i], 2
-	push(a)
+	set push, a
 	NEXT()
 
 	;; TODO memory management stuff
 
-#macro defvar(name, namelen, flags, label, initial) {
-	defcode(\name,\namelen,\flags,\label)
-	push(var_\name)
-	NEXT()
-:var_\name
-	dat \initial
+#defmacro defvar(name flags label initial) {
+	r = macros["defword"](name,flags,label, true);
+	r += "set push, var_" + name + "\n";
+	r += macros["NEXT"]();
+	r += ":var_" + name + "\n";
+	r += "dat " + initial + "\n";
 }
 
-	defvar ("STATE",5,0,STATE,0)
-	defvar ("HERE",4,0,HERE,0)
-	defvar ("LATEST",6,0,LATEST,name_SYSCALL0) ;this must be the last word
-	defvar ("S0",2,0,SZ,0)
-	defvar ("BASE",4,0,BASE,10)
+	defvar ("STATE",0,"STATE",0)
+	defvar ("HERE",0,"HERE",0)
+	defvar ("LATEST",0,"LATEST","name_SYSCALL0") ;this must be the last word
+	defvar ("S0",0,"SZ",0)
+	defvar ("BASE",0,"BASE",10)
 
 	;; TODO built in constants
 

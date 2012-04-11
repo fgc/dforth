@@ -2,7 +2,7 @@
     macros = {};
 }
 dasm
-    = lines:(op2 / op1 / label / defmacro / macrocall)+ {
+    = lines:( op2 / op1 / label / defmacro / macrocall)+ {
 	return lines.join("");
     }
 
@@ -13,10 +13,26 @@ op1
     = _ instr:instr1 _ op:operand _ {return instr + " " + op + "\n";}
 
 label
-    = _ ":" symbol:symbol op:(op2 / op1)? _ { console.log("label",symbol);return ":" + symbol + " " + op;}
+    = _ ":" symbol:symbol _ { console.log("label",symbol); return ":" + symbol + " ";}
+
+braced
+    = "{" parts:(braced / nonBraceCharacter)* "}" {
+	return parts.join("");
+    }
+
+nonBraceCharacter
+  = [^{}]
+
+bracketed
+    = "[" parts:(braced / nonBracketCharacter)* "]" {
+	return parts.join("");
+    }
+
+nonBracketCharacter
+    = [^\[\]]
 
 defmacro 
-    = _ "#defmacro" _ name:symbol _ "(" _ paramlist:(symbol _)* ")"_ "[" _ body:macrobody _ "]" _ env:("[" _ macrobody _ "]")? _ {
+    = _ "#defmacro" _ name:symbol _ "(" _ paramlist:(symbol _)* ")"_  body:braced  _ env:bracketed? _ {
 	console.log("macro!");
 	console.log("name:", name,"params", paramlist, "body", body);
 	var paramstr = "";
@@ -28,12 +44,13 @@ defmacro
 	}
 	var macrodef = "";
 	if (env != undefined) {
-	    macrodef += env[2];
+	    macrodef += env;
 	}
 	macrodef += "macros[\"" + name + "\"] = function (" + paramstr + ") {";
 	macrodef += body
 	macrodef += "}";
         console.log("macrodef:",macrodef);
+        console.log("env:",env);
 	eval(macrodef);
 	return "";
 }
@@ -44,7 +61,8 @@ macrobody
 
 macrocall
     = _ name:symbol _ "("_ params:[^\)]* _")" _ {
-	return macros[name]();
+	
+	return eval ("macros[\"" + name + "\"](" + params.join("")+")");
     }
 
 instr2
@@ -79,9 +97,21 @@ address
 
 literal
     = digits:[0-9A-Fa-fx]+ {return digits.join("");}
-
+/*
 _ "whitespace"
   = whitespace*
 
 whitespace
   = [ \t\n\r]
+*/
+
+_ 
+  = ( whiteSpace / lineTerminator / lineComment )* 
+whiteSpace 
+  = [\t\v\f \u00A0\uFEFF] 
+lineTerminator 
+  = [\n\r] 
+lineComment 
+  = ";" (!lineTerminator anyCharacter)* 
+anyCharacter 
+  = . 
