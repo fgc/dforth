@@ -3,13 +3,14 @@
     <script src="dasm.js"></script>
     <script src="dscheme.js"></script>
     <script src="dcpu.js"></script>
+    <script src="preprocessor.js"></script>
     <script>
       cpu = new DCPUCore();
       cpu.__init__();
 
       function load() {
           cpu.__init__();
-          program = dasm.parse(document.getElementById("code").value);
+          var program = dasm.parse(document.getElementById("code").value);
           cpu.load(program);
       }
       
@@ -19,14 +20,21 @@
           document.getElementById("debug").innerHTML += "sp: " + cpu.sp + "<br>";
           document.getElementById("debug").innerHTML += "o: " + cpu.o + "<br>";
           document.getElementById("debug").innerHTML += JSON.stringify(cpu.registers) + "<br>";
-
       }
+      
+      function pre() {
+          program = preprocessor.parse(document.getElementById("macro").value);
+          document.getElementById("code").value = program;
+      }
+      
     </script>
   </head>
   <body>
-    <textarea id="code" cols="40" rows="20"></textarea>
+    <textarea id="macro" cols="20" rows="20"></textarea>
+    <textarea id="code" cols="30" rows="20"></textarea>
     <input type="button" name="load" value="Load" onclick="load()">
     <input type="button" name="step" value="Step" onclick="dostep()">
+    <input type="button" name="pre" value="Pre" onclick="pre()">
     <div id="debug">Debug:<br></div>
   </body>
 </html>

@@ -1,5 +1,8 @@
+{
+    var macros = {};
+}
 dasm
-    = lines:(op / label)+ {
+    = lines:(op / label / defmacro / macrocall)+ {
 	var labels = {};
 	var offset = 0;
 	var output = [];
@@ -27,31 +30,81 @@ dasm
 	}
 
 	for (var i in lines) {
-	    line = lines[i];
+	    var line = lines[i];
 	    console.log("line:" + JSON.stringify(line));
 	    if (line.label != undefined) {
 		labels[line.label.label] = offset;
 	    }
-	    else {
-		var oooo = line[0];
-		var aaaaaa = predelabelize(line[1]);
-		var bbbbbb = predelabelize(line[2]);
-                console.log(JSON.stringify([]))
-		output.push(((0x0 | oooo) | aaaaaa[0] << 4) | bbbbbb[0] << 10);
-		if (aaaaaa.length == 2) {
-		   output.push(aaaaaa[1]);
-		   offset++;
-                } 
-		if (bbbbbb.length == 2) {
-		   output.push(bbbbbb[1]);
-		   offset++;
-                } 
-		offset++;
-	    }
+	    else if (line.macrodef == undefined) {
+		    var oooo = line[0];
+		    var aaaaaa = predelabelize(line[1]);
+		    var bbbbbb = predelabelize(line[2]);
+                    console.log(JSON.stringify([]))
+		    output.push(((0x0 | oooo) | aaaaaa[0] << 4) | bbbbbb[0] << 10);
+		    if (aaaaaa.length == 2) {
+			output.push(aaaaaa[1]);
+			offset++;
+                    } 
+		    if (bbbbbb.length == 2) {
+			output.push(bbbbbb[1]);
+			offset++;
+                    } 
+		    offset++;
+		}
 	}
 	postdelabelize(output);
 	return output;
     }
+
+defmacro 
+    = _ "#defmacro" _ name:macroname _ "(" _ paramlist:(macroname _)* ")"_ "[" _ body:macrobody _ "]" _ env:("[" _ macrobody _ "]")? _{
+	console.log("macro!");
+	console.log("name:", name,"params", paramlist, "body", body);
+	var paramstr = "";
+	for (i in paramlist) {
+	    if (i > 0) {
+		paramstr += ", ";
+	    }
+	    paramstr += paramlist[i][0];
+	}
+	var macrodef = "";
+	if (env != undefined) {
+	    macrodef += env[2] + "; ";
+	}
+	macrodef += "macros[name] = function (" + paramstr + ") {";
+	macrodef += body
+	macrodef += "}";
+	eval(macrodef);
+	return {macrodef: true};
+}
+
+macroname
+    = first:[a-zA-Z_] rest:[a-zA-Z0-9_-]* {
+	return first + rest.join("");
+    }
+
+macrobody
+    = macrobody:[^\]]* {return macrobody.join("");}
+
+macrocall
+    = _ name:macroname _ "("_ paramlist:(macroname _)* ")" _ {	
+	console.log("macrocall",macros[name]);
+	for (i in paramlist) {
+	    if (i > 0) {
+		paramstr += ", ";
+	    }
+	    paramstr += paramlist[i][0];
+	}
+	expansion = macros[name]();
+	lines = [];
+	for (var i in expansion) {
+	    lines.push(dasm.parse(expansion[i], "macroexpand"));
+	}
+	return lines;
+    }
+
+macroexpand
+    = (op / label / macrocall)*
 
 op  
     = _ instr:instr _ op1:operand _ "," _  op2:operand _ {return [instr,op1, op2];}
@@ -155,12 +208,8 @@ decimal
 	}
     }
 
-/* ===== Whitespace ===== */
-
 _ "whitespace"
   = whitespace*
 
-// Whitespace is undefined in the original JSON grammar, so I assume a simple
-// conventional definition consistent with ECMA-262, 5th ed.
 whitespace
   = [ \t\n\r]
