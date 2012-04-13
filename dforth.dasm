@@ -4,6 +4,14 @@
 ;; i source
 ;; z return stack pointer
 
+#defmacro space(size) {
+	var r = "";
+	for (var i=0; i < size; i++) {
+	    r += "dat 0\n";
+	}
+        return r;
+}
+
 #defmacro NEXT() {		//jump to the address stored at the location pointed to by i
         var r = "";
 	r += "set a, [i]\n";
@@ -189,13 +197,391 @@ set pc, start
 	return r;
 }
 
-	defvar ("STATE",0,"STATE",0)
-	defvar ("HERE",0,"HERE",0)
-	defvar ("LATEST",0,"LATEST","SYSCALL0") ;this must be the last word
-	defvar ("S0",0,"SZ",0)
-	defvar ("BASE",0,"BASE",10)
+	defvar("STATE",0,"STATE",0)
+	defvar("HERE",0,"HERE",0)
+	defvar("LATEST",0,"LATEST","SYSCALL0") ;this must be the last word
+	defvar("S0",0,"SZ",0)
+	defvar("BASE",0,"BASE",10)
 
-	;; TODO built in constants
+#defmacro defconst(name flags label value) {
+	r = macros["defword"](name, flags, label, true);
+	r += "set push, " + value + "\n";
+	r += macros["NEXT"]();
+	return r;
+}
 
-:rsp
+	defconst("VERSION",0,"VERSION",0);
+	defconst("R0",0,"RZ","return_stack_top");
+	defconst("DOCOL",0,"__DOCOL","DOCOL");
+	defconst("F_IMMED",0,"__F_IMMED",256);
+	defconst("F_HIDDEN",0,"__F_HIDDEN",512);
+	defconst "F_LENMASK",0,"__F_LENMASK",255);
+
+	;;return stack
+
+	defword(">R",0,"TOR",true)
+	set a, pop
+	PUSHRSP(a)
+	NEXT()
+
+	defword("R>",0,"FROMR",true)
+	POPRSP(a)
+	set push, a
+	NEXT()
+
+	defword("RSP@",0,"RSPFETCH",true)
+	set push, z
+	NEXT()
+
+	defword("RSP!",0,"RSPSTORE",true)
+	set z, pop
+	NEXT()
+
+	defword("RDROP",0,"RDROP", true)
+	add z, 1
+	NEXT()
+
+	;;data stack
+	
+	defword("DSP@",0,"DSPFETCH", true)
+	set push, sp
+        NEXT()
+
+        defword("DSP!",0,"DSPSTORE", true)
+	set sp, pop
+	NEXT()
+
+	;; I/O very basic for now
+
+	defword("KEY",0,"KEY", true)
+	jsr _KEY
+	set push, a
+	NEXT()
+:_KEY   
+	set a, [0x9000]
+	set [0x9000], 0
+	set pc, pop
+
+	defword("EMIT",0,"EMIT", true)
+	set a, [cursorpos]
+	set [0x8000 + a], pop
+	add [cursorpos], 1
+	NEXT()
+:cursorpos
 	dat 0
+
+	defword("WORD", 0, "WORD", true)
+	jsr _WORD
+	set push word_buffer
+	set push j
+	NEXT()
+:_WORD
+	jsr _KEY ;get next key
+	ife a, 0x5C ; comment?
+	    set pc, :_skip
+	ife a, 0x20 ; space?
+	    set pc, _WORD
+	set j, word_buffer
+:_store
+	set [j], a
+	add j, 1
+	jsr _KEY
+	ifn a, 0x20
+	    set pc, _store
+	sub j, word_buffer
+	set pc, pop
+:_skip
+	jsr _KEY
+	ife a, 0x0A
+	    set pc, _WORD
+	set pc, _skip
+
+:word_buffer
+	space(32)
+
+	defword("NUMBER",0,"NUMBER", true)
+	set j, pop ;len
+	set i, pop ;addr
+	jsr _NUMBER
+	set push a ;number
+	set push c ;errors
+	NEXT()
+
+:_NUMBER
+	set a, 0
+	set b, 0
+	ife j, 0 ;len 0
+	    set pc, pop
+	set x, [var_BASE]
+	set b, [i]
+	add i, 1
+	set push a
+	ifn b, 0x2D ; '-'
+	set pc, _convert_skip
+	set a, pop
+	set push, b
+	sub j, 1
+	ifn j, 0
+	set pc, _convert_loop
+	pop b
+	set c, 1
+	set pc, pop
+	
+:_convert_loop
+	mul a, x
+	set b, [i]
+	add i, 1
+	
+:_convert_skip
+	ifg 0x30, b
+	set pc, _neg_and_ret
+	ifg 0x3A, b
+	set pc, _convert
+	ifg 0x41, b
+	set pc, _neg_and_ret
+	
+:_convert
+	ifg b, x
+	set pc, _neg_and_ret
+	add a, b
+	sub j, 1
+	ifn j , 0
+	set pc, _convert_loop
+
+:_neg_and_ret
+	set b, pop
+	ifn b, 0
+	set b, b     ;NOP, how do we make negatives?
+	set pc, pop
+
+
+
+	defword("FIND", 0, "FIND", true)
+	set j, pop 	;len
+	set i, pop	;addr
+	jsr _FIND
+	set push, a
+	NEXT()
+
+:_FIND
+	set x, [var_LATEST]
+	set push, y
+:_check_word
+	ife x, 0
+	set pc, _not_found
+
+	set a, [1 + x]
+	and a, 0x00FF
+	ifn a, j ;not the same lenght
+	set pc, _next_word
+
+	set push, j
+	set push, i
+	set y, x
+	add y, 1
+:_f_compare_loop
+        ifn [i],[y]
+	set pc, _next_word
+	add i, 1
+	add y, 1
+	set i, pop
+	set j, pop
+
+	set y, pop
+	set a, x
+	set pc, pop
+:_next_word
+	set x, [x]
+	set pc, _check_word
+:_not_found
+	set y, pop
+	set a, 0
+	set pc, pop
+
+	defword(">CFA",0,"TCFA", true)
+	set i, pop
+	set pc, _TCFA
+	set push, i
+	NEXT()
+:_TCFA
+	set a, 0
+	add i, 1
+	set a, [i]
+	and a, 0x00FF
+	add i, 1
+	add i, a
+	set pc, pop
+
+	defword(">DFA",0,"TDFA", false)
+	dat TCFA
+	dat INCR
+	dat EXIT
+
+	defword("CREATE",0,"CREATE", true)
+	set c,pop		;len
+	set b,pop		;addr
+
+	set i,[var_HERE]
+	set a,[var_LATEST]
+	set [i],a
+	add i, 1
+
+	set [i], c
+	add i, 1
+
+	set push, x
+	set x, b
+:_create_loop
+	set [i],[x]
+	add i, 1
+	add x, 1
+	sub c, 1
+	ifn c, 0
+	set pc, _create_loop
+	set x,pop
+
+	set [var_LATEST],[var_HERE]
+	set [var_HERE],i
+	NEXT()
+
+	defword(",",0,"COMMA",true)
+	set a, pop
+	jsr _COMMA
+	NEXT()
+:_COMMA
+	set i, [var_HERE]
+	set [i], a
+	add i, 1
+	set [var_HERE], i
+	set pc, pop
+
+	defword("[",256,"LBRAC",true)
+	set [var_STATE], 0
+
+	defword("]",0,"RBRAC",true)
+	set [var_STATE], 1
+
+	defword(":",0,"COLON", false)
+	dat WORD
+	dat CREATE
+	dat LIT
+	dat DOCOL
+	dat COMMA
+	dat LATEST
+	dat FETCH
+	dat HIDDEN
+	dat RBRAC
+	dat EXIT
+
+	defword(";",256,"SEMICOLON",false)
+	dat LIT
+	dat EXIT
+	dat COMMA
+	dat LATEST
+	dat FETCH
+	dat HIDDEN
+	dat LBRAC
+	dat EXIT
+
+	defword("IMMEDIATE",256, "IMMEDIATE", true)
+	set j, [var_LATEST]
+	add j, 1
+	bor [j], 256
+	NEXT()
+
+	defword("HIDDEN",0,"HIDDEN", true)
+	set j, pop
+	add j, 1
+	bor [j], 512
+	NEXT()
+
+	defword("HIDE",0,"HIDE", false)
+	dat WORD
+	dat FIND
+	dat HIDDEN
+	dat EXIT
+
+	defword("\'",0,"TICK",true)
+	set push,[1+i]
+	NEXT()
+
+	defword("BRANCH",0,"BRANCH", true)
+	add i,[i]
+	NEXT()
+
+	defword("0BRANCH",0,"ZBRANCH", true)
+	set a, pop
+	ife a, 0
+	set pc, code_BRANCH
+	add i, 1
+	NEXT()
+
+	defword("LITSTRING",0,"LITSTRING", true)
+	set a, [i]
+	add i, 1
+	set push, i
+	set push, a
+	add i, a
+	NEXT()
+
+	defword("TELL",0,"TELL",true)
+	set a, pop 		;len
+	set b, pop		;addr
+	set c, [cursorpos]
+:_tell_loop
+	set [0x8000 + c], [b]
+	add b, 1
+	add c, 1
+	add [cursorpos], 1
+	sub a, 1
+	ifn a, 0
+	set pc, _tell_loop
+	NEXT()
+
+	defword("QUIT", 0,"QUIT", false)
+	dat RZ
+	dat RSPSTORE
+	dat INTERPRET
+	dat BRANCH
+	dat -1
+
+	defword("INTERPRET",0,"INTERPRET",true)
+	jsr _WORD
+
+	set [interpret_is_lit], 0
+	jsr _FIND
+	ife a, 0
+	set pc, _not_word
+	set i, a
+	set a, [1 + i]
+	set push a
+	jsr _TCFA
+	set a, pop
+	set c, a
+	and c, 256
+	ife c, 256
+	set pc, _execute
+	set pc, _comp_or_exec
+:_not_word
+	add [interpret_is_lit], 1
+	jsr _NUMBER
+	ifn c, 0
+	set pc, _int_error
+	set b, a
+	set a, LIT
+:_comp_or_exec
+	ife [var_STATE], 0
+	set pc, _execute
+	jsr _COMMA
+	ifn
+	
+	
+	
+	
+
+	
+:return_stack
+	space(4096)
+:return_stack_top
+:buffer
+	space(4096)
