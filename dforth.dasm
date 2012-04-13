@@ -16,7 +16,7 @@
         var r = "";
 	r += "set a, [i]\n";
 	r += "add i, 1\n";
-	r += "set pc, a\n";
+	r += "set pc, [a]\n";
 	return r;
 }
 
