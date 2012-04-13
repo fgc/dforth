@@ -2,7 +2,7 @@
     var macros = {};
 }
 dasm
-    = lines:(op / label / defmacro / macrocall)+ {
+    = lines:(dat / op / label / defmacro / macrocall)+ {
 	var labels = {};
 	var offset = 0;
 	var output = [];
@@ -31,9 +31,28 @@ dasm
 
 	for (var i in lines) {
 	    var line = lines[i];
-	    console.log("line:" + JSON.stringify(line));
+
+	    console.log("offset:",offset, "line:" , JSON.stringify(line));
+
 	    if (line.label != undefined) {
 		labels[line.label.label] = offset;
+	    }
+	    else if (line.data != undefined) {
+	        if (line.data.str != undefined) {
+		   for (var i = 0; i < line.data.str.length; i++) {
+		       output.push(line.data.str.charCodeAt(i));
+		   }
+		   offset += line.data.str.length;
+		}
+	        else if (line.data.label != undefined) {
+		    output.push(line.data);
+                offset++;
+		}
+		else {		
+                output.push(line.data[0]);
+                offset++;
+		}
+
 	    }
 	    else if (line.macrodef == undefined) {
 		    var oooo = line[0];
@@ -55,6 +74,16 @@ dasm
 	postdelabelize(output);
 	return output;
     }
+
+dat
+    = _ "dat" _ data:(literal / symbol / str) _ {
+    return {"data": data};
+}
+
+jsr
+    = _ "jsr" _ jsr:(literal / symbol) _ {
+    return {"jsr": jsr};
+}
 
 defmacro 
     = _ "#defmacro" _ name:macroname _ "(" _ paramlist:(macroname _)* ")"_ "[" _ body:macrobody _ "]" _ env:("[" _ macrobody _ "]")? _{
@@ -207,6 +236,11 @@ decimal
 	    return [31, literalint];
 	}
     }
+
+str
+    = "\"" str:[^\"]* "\"" {
+        return {"str": str.join("")};
+    }   
 
 _ "whitespace"
   = whitespace*

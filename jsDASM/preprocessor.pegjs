@@ -93,7 +93,8 @@ operand
 
 address
     = "[" _ literal:literal _ "+" _ symbol:symbol _ "]" {return "[" + literal + " + " + symbol + "]";}
-    / "[" _ unary:(literal / symbol) _ "]" {return "[" + unary + "]";}
+    / "[" _ literal:literal _ "]" {return "[" + literal + "]";}
+    / "[" _ symbol:symbol _ "]" {return "[" + symbol + "]";}
 
 literal
     = digits:[0-9A-Fa-fx]+ {return digits.join("");}

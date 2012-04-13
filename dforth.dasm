@@ -16,7 +16,7 @@
         var r = "";
 	r += "set a, [i]\n";
 	r += "add i, 1\n";
-	r += "set PC, a\n";
+	r += "set pc, a\n";
 	return r;
 }
 
@@ -43,8 +43,8 @@ set pc, start
 	NEXT()
 
 :start
-	set [var_S0], SP	;save the initial data stack pointer
-	set z, rsp		;set initial return stack
+	set [var_S0], sp	;save the initial data stack pointer
+	set z, return_stack_top	;set initial return stack
 	set i, coldstart
 	NEXT()			;go!
 	
@@ -53,6 +53,7 @@ set pc, start
 
 
 #defmacro defword (name flags label iscode) {
+	console.log("Defining word:", name);
         var r = "";
 	r += ":name_" + label + "\n";
 	r += "dat " + link + "\n";
@@ -198,8 +199,8 @@ set pc, start
 }
 
 	defvar("STATE",0,"STATE",0)
-	defvar("HERE",0,"HERE",0)
-	defvar("LATEST",0,"LATEST","SYSCALL0") ;this must be the last word
+	defvar("HERE",0,"HERE","here")
+	defvar("LATEST",0,"LATEST","EXECUTE") ;this must be the last word
 	defvar("S0",0,"SZ",0)
 	defvar("BASE",0,"BASE",10)
 
@@ -210,22 +211,22 @@ set pc, start
 	return r;
 }
 
-	defconst("VERSION",0,"VERSION",0);
-	defconst("R0",0,"RZ","return_stack_top");
-	defconst("DOCOL",0,"__DOCOL","DOCOL");
-	defconst("F_IMMED",0,"__F_IMMED",256);
-	defconst("F_HIDDEN",0,"__F_HIDDEN",512);
-	defconst "F_LENMASK",0,"__F_LENMASK",255);
+	defconst("VERSION",0,"VERSION",0)
+	defconst("R0",0,"RZ","return_stack_top")
+	defconst("DOCOL",0,"__DOCOL","DOCOL")
+	defconst("F_IMMED",0,"__F_IMMED",256)
+	defconst("F_HIDDEN",0,"__F_HIDDEN",512)
+	defconst("F_LENMASK",0,"__F_LENMASK",255)
 
 	;;return stack
 
 	defword(">R",0,"TOR",true)
 	set a, pop
-	PUSHRSP(a)
+	PUSHRSP("a")
 	NEXT()
 
 	defword("R>",0,"FROMR",true)
-	POPRSP(a)
+	POPRSP("a")
 	set push, a
 	NEXT()
 
@@ -255,10 +256,17 @@ set pc, start
 
 	defword("KEY",0,"KEY", true)
 	jsr _KEY
+
+	set b, [cursorpos] 	;echo
+	set [0x8000 + b], a
+	add [cursorpos], 1
+	
 	set push, a
 	NEXT()
 :_KEY   
 	set a, [0x9000]
+	ife a, 0
+	set pc, _KEY
 	set [0x9000], 0
 	set pc, pop
 
@@ -272,13 +280,13 @@ set pc, start
 
 	defword("WORD", 0, "WORD", true)
 	jsr _WORD
-	set push word_buffer
-	set push j
+	set push, word_buffer
+	set push, j
 	NEXT()
 :_WORD
 	jsr _KEY ;get next key
 	ife a, 0x5C ; comment?
-	    set pc, :_skip
+	    set pc, _skip
 	ife a, 0x20 ; space?
 	    set pc, _WORD
 	set j, word_buffer
@@ -303,8 +311,8 @@ set pc, start
 	set j, pop ;len
 	set i, pop ;addr
 	jsr _NUMBER
-	set push a ;number
-	set push c ;errors
+	set push, a ;number
+	set push, c ;errors
 	NEXT()
 
 :_NUMBER
@@ -315,7 +323,7 @@ set pc, start
 	set x, [var_BASE]
 	set b, [i]
 	add i, 1
-	set push a
+	set push, a
 	ifn b, 0x2D ; '-'
 	set pc, _convert_skip
 	set a, pop
@@ -323,7 +331,7 @@ set pc, start
 	sub j, 1
 	ifn j, 0
 	set pc, _convert_loop
-	pop b
+	set b, pop
 	set c, 1
 	set pc, pop
 	
@@ -543,7 +551,7 @@ set pc, start
 	dat RSPSTORE
 	dat INTERPRET
 	dat BRANCH
-	dat -1
+	dat 0xFFFF	;-1 but we dont have negs here
 
 	defword("INTERPRET",0,"INTERPRET",true)
 	jsr _WORD
@@ -554,7 +562,7 @@ set pc, start
 	set pc, _not_word
 	set i, a
 	set a, [1 + i]
-	set push a
+	set push, a
 	jsr _TCFA
 	set a, pop
 	set c, a
@@ -566,14 +574,40 @@ set pc, start
 	add [interpret_is_lit], 1
 	jsr _NUMBER
 	ifn c, 0
-	set pc, _int_error
+	set pc, _parse_error
 	set b, a
 	set a, LIT
 :_comp_or_exec
 	ife [var_STATE], 0
 	set pc, _execute
 	jsr _COMMA
-	ifn
+	ife [interpret_is_lit], 0
+	set pc, _not_number
+	set a, b
+	jsr _COMMA
+:_not_number
+	NEXT()
+:_execute
+	ife [interpret_is_lit], 0
+	set pc, _push_literal
+	set pc, [a]
+:_push_literal
+	set push, b
+	NEXT()
+:_parse_error
+	set [0x8000], 0xA0D5
+	NEXT()
+:interpret_is_lit
+	dat 0
+
+	defword("CHAR",0,"CHAR", true)
+	jsr _WORD
+	set push,[word_buffer]
+	NEXT()
+
+	defword("EXECUTE",0,"EXECUTE", true)
+	set a, pop
+	set pc, [a]
 	
 	
 	
@@ -581,7 +615,8 @@ set pc, start
 
 	
 :return_stack
-	space(4096)
+	space(15)
 :return_stack_top
 :buffer
-	space(4096)
+	space(20)
+:here
