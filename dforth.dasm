@@ -52,7 +52,7 @@ set pc, start
 	dat QUIT
 
 
-#defmacro defword (name flags label iscode) {
+#defmacro defword(name flags label iscode) {
 	console.log("Defining word:", name);
         var r = "";
 	r += ":name_" + label + "\n";
@@ -82,18 +82,18 @@ set pc, start
 	set push, b			;and the second is first
 	NEXT()
 
-	defword ("DUP",0,"DUP", true)
+	defword("DUP",0,"DUP", true)
 	set a, peek		;duplicate top of stack
 	set push, a
 
-	defword ("OVER",0,"OVER", true)
+	defword("OVER",0,"OVER", true)
 	set a, sp
 	add a, 1
 	set a, [a]		;copy the second element of the stack
 	set push, a			;on top
 	NEXT()
 
-	defword ("ROT",0,"ROT", true)
+	defword("ROT",0,"ROT", true)
 	set a, pop 
 	set b, pop 
 	set c, pop 
@@ -102,7 +102,7 @@ set pc, start
 	set push, c 
 	NEXT()
 
-	defword ("-ROT",0,"NROT", true)
+	defword("-ROT",0,"NROT", true)
 	set a, pop 
 	set b, pop 
 	set c, pop 
@@ -111,12 +111,12 @@ set pc, start
 	set push, b 
 	NEXT()
 
-	defword ("2DROP",0,"TWODROP", true)
+	defword("2DROP",0,"TWODROP", true)
 	set a, pop 
 	set a, pop 
 	NEXT()
 
-	defword ("2DUP",0,"TWODUP", true)
+	defword("2DUP",0,"TWODUP", true)
 	set a, peek
 	set b, sp
 	add b, 1
@@ -125,7 +125,7 @@ set pc, start
 	set push, a
 	NEXT()
 
-	defword ("2SWAP",0,"TWOSWAP", true)
+	defword("2SWAP",0,"TWOSWAP", true)
 	set a, pop 
 	set b, pop 
 	set c, pop 
@@ -136,39 +136,39 @@ set pc, start
 	set push, c
 	NEXT()
 
-	defword ("?DUP",0,"QDUP", true)
+	defword("?DUP",0,"QDUP", true)
 	set a, peek
 	ifn a, 0
 	set push, a
 	NEXT()
 
-	defword ("1+",0,"INCR", true)
+	defword("1+",0,"INCR", true)
 	add peek,1
 	NEXT()
 
-	defword ("1-",0,"DECR", true)
+	defword("1-",0,"DECR", true)
 	sub peek,1
 	NEXT()
 
-	defword ("2+",0,"INCR2", true)
+	defword("2+",0,"INCR2", true)
 	add peek,2
 	NEXT()
 
-	defword ("2-",0,"DECR2", true)
+	defword("2-",0,"DECR2", true)
 	sub peek,2
 	NEXT()
 
-	defword ("+",0,"ADD", true)
+	defword("+",0,"ADD", true)
 	set a, pop
 	add peek, a
 	NEXT()
 	
-	defword ("-",0,"SUB", true)
+	defword("-",0,"SUB", true)
 	set a, pop
 	sub peek, a
 	NEXT()
 	
-	defword ("*",0,"MUL", true)
+	defword("*",0,"MUL", true)
 	set a, pop 
 	set b, pop 
 	mul a, b
@@ -177,17 +177,54 @@ set pc, start
 
 	;; TODO comparisons and bitwise stuff
 
-	defword ("EXIT",0,"EXIT", true)
+	defword("EXIT", 0, "EXIT", true)
 	POPRSP(i)
 	NEXT()
 
-	defword ("LIT",0,"LIT", true)
+	defword("LIT", 0, "LIT", true)
 	set a,[i]
 	add [i], 1
 	set push, a
 	NEXT()
 
-	;; TODO memory management stuff
+	defword("!", 0, "STORE", true)
+	set b, pop
+	set a, pop
+	set [b], a
+	NEXT()
+
+	defword("@", 0, "FETCH", true)
+	set b, pop
+	set push,[b]
+	NEXT()
+	
+	defword("+!", 0, "ADDSTORE", true)
+	set b, pop
+	set a, pop
+	add [b], a
+	NEXT()
+
+	defword("-!", 0, "SUBSTORE",true)
+	set b, pop
+	set a, pop
+	sub [b], a
+	NEXT()
+
+	defword("CMOVE", 0, "CMOVE", true)
+	set x, pop 		;len
+	set y, pop              ;dest
+	set a, pop		;source
+:_cmove_loop
+	set [y],[a]
+	add y, 1
+	add a, 1
+	sub x, 1
+	ifn x, 0
+	set pc, _cmove_loop
+	NEXT()
+
+
+	
 
 #defmacro defvar(name flags label initial) {
 	r = macros["defword"](name,flags,label, true);
