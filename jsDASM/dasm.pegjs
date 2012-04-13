@@ -154,7 +154,9 @@ literal
     }
 
 address 
-    = "[" _ address:(regoffset / adrliteral / adrsymbol) _ "]"
+    = "[" _ address:(regoffset / adrliteral / adrsymbol) _ "]" {
+	return address;
+    }
 
 adrliteral
     = adrliteral:(hex / decimal) {

@@ -1136,64 +1136,76 @@ dasm = (function(){
         
         
         var savedPos0 = pos;
+        var savedPos1 = pos;
         if (input.substr(pos, 1) === "[") {
-          var result1 = "[";
+          var result3 = "[";
           pos += 1;
         } else {
-          var result1 = null;
+          var result3 = null;
           if (reportMatchFailures) {
             matchFailed("\"[\"");
           }
         }
-        if (result1 !== null) {
-          var result2 = parse__();
-          if (result2 !== null) {
-            var result8 = parse_regoffset();
-            if (result8 !== null) {
-              var result3 = result8;
+        if (result3 !== null) {
+          var result4 = parse__();
+          if (result4 !== null) {
+            var result10 = parse_regoffset();
+            if (result10 !== null) {
+              var result5 = result10;
             } else {
-              var result7 = parse_adrliteral();
-              if (result7 !== null) {
-                var result3 = result7;
+              var result9 = parse_adrliteral();
+              if (result9 !== null) {
+                var result5 = result9;
               } else {
-                var result6 = parse_adrsymbol();
-                if (result6 !== null) {
-                  var result3 = result6;
+                var result8 = parse_adrsymbol();
+                if (result8 !== null) {
+                  var result5 = result8;
                 } else {
-                  var result3 = null;;
+                  var result5 = null;;
                 };
               };
             }
-            if (result3 !== null) {
-              var result4 = parse__();
-              if (result4 !== null) {
+            if (result5 !== null) {
+              var result6 = parse__();
+              if (result6 !== null) {
                 if (input.substr(pos, 1) === "]") {
-                  var result5 = "]";
+                  var result7 = "]";
                   pos += 1;
                 } else {
-                  var result5 = null;
+                  var result7 = null;
                   if (reportMatchFailures) {
                     matchFailed("\"]\"");
                   }
                 }
-                if (result5 !== null) {
-                  var result0 = [result1, result2, result3, result4, result5];
+                if (result7 !== null) {
+                  var result1 = [result3, result4, result5, result6, result7];
                 } else {
-                  var result0 = null;
-                  pos = savedPos0;
+                  var result1 = null;
+                  pos = savedPos1;
                 }
               } else {
-                var result0 = null;
-                pos = savedPos0;
+                var result1 = null;
+                pos = savedPos1;
               }
             } else {
-              var result0 = null;
-              pos = savedPos0;
+              var result1 = null;
+              pos = savedPos1;
             }
           } else {
-            var result0 = null;
-            pos = savedPos0;
+            var result1 = null;
+            pos = savedPos1;
           }
+        } else {
+          var result1 = null;
+          pos = savedPos1;
+        }
+        var result2 = result1 !== null
+          ? (function(address) {
+          	return address;
+              })(result1[2])
+          : null;
+        if (result2 !== null) {
+          var result0 = result2;
         } else {
           var result0 = null;
           pos = savedPos0;
