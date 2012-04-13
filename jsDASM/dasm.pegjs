@@ -51,7 +51,7 @@ dasm
                 offset++;
 		}
 		else {		
-                output.push(line.data[0]);
+                output.push(line.data);
                 offset++;
 		}
 
@@ -92,7 +92,7 @@ dasm
     }
 
 dat
-    = _ "dat" _ data:(literal / symbol / str) _ {
+    = _ "dat" _ data:(hex / decimal / symbol / str) _ {
     return {"data": data};
 }
 
@@ -144,57 +144,61 @@ symbol
     }
 
 literal 
-    = hex / decimal
-
-address 
-    = "[" _ literal:literal _ "]" {
-	if (literal.length == 1) {
-	    return [30, literal[0] - 32];
+    = value:(hex / decimal) {
+	if (value < 32) {
+	    return [value + 32];
 	}
 	else {
-	    return [30, literal[1]];
+	    return [31, value];
 	}
     }
-    / "[" _ symbol:symbol _ "]" {
-	if (symbol.label == undefined) {
+
+address 
+    = "[" _ address:(regoffset / adrliteral / adrsymbol) _ "]"
+
+adrliteral
+    = adrliteral:(hex / decimal) {
+	return [30, adrliteral];
+    }
+
+adrsymbol
+    = symbol:symbol {
+	if (symbol.label == undefined) { // is a register
 	    return [symbol[0] + 8];
 	}
 	else {
-	    console.log("symbaddr: ",symbol);
 	    return {"symbaddr":symbol};
 	}
     }
-    / "[" _ literal:literal _ "+" _ symbol:symbol _ "]" {
-	console.log("reg off addr: " , literal, " ", symbol);
-	if (literal.lenght == 1) {
-	    return [symbol[0] + 0x10, literal[0] - 32]
-	}
-	else {
-	    return [symbol[0] + 0x10, literal[1]]
-	}
+
+regoffset
+    = offsetliteral:(hex / decimal) _ "+" _ register:symbol {
+	console.log("reg off addr: " , offsetliteral, "+", register);
+	return [register[0] + 16, offsetliteral];
     }
 
 hex 
-    = "0x" hexdigits:[0-9a-fA-F]+ {
-	var literalint = parseInt(hexdigits.join(""), 16); 
-	if (literalint < 32) {
-	    return [literalint + 32];
-	}
-	else {
-	    return [31, literalint];
-	}
+    = "0x" value:hexdigits {
+	return value;
     }
 
 decimal
-    = digits:[0-9]+ { 
-	var literalint = parseInt(digits.join(""), 10); 
-	if (literalint < 32) {
-	    return [literalint + 32];
-	}
-	else {
-	    return [31, literalint];
-	}
+    = value:decimaldigits { 
+	return value;
     }
+
+
+hexdigits 
+    = hexdigits:[0-9a-fA-F]+ {
+	return parseInt(hexdigits.join(""), 16); 
+    }
+
+decimaldigits
+    = digits:[0-9]+ { 
+	return parseInt(digits.join(""), 10); 
+    }
+
+
 
 str
     = "\"" str:[^\"]* "\"" {
