@@ -13,7 +13,7 @@ op1
     = _ instr:instr1 _ op:operand _ {return instr + " " + op + "\n";}
 
 label
-    = _ ":" symbol:symbol _ { console.log("label",symbol); return ":" + symbol + " ";}
+    = _ ":" symbol:symbol _ { console.log("label",symbol); return ":" + symbol + "\n";}
 
 braced
     = "{" parts:(braced / nonBraceCharacter)* "}" {

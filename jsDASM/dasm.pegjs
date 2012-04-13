@@ -2,7 +2,7 @@
     var macros = {};
 }
 dasm
-    = lines:(dat / op / label / defmacro / macrocall)+ {
+    = lines:(jsr / dat / op / label)+ {
 	var labels = {};
 	var offset = 0;
 	var output = [];
@@ -22,6 +22,7 @@ dasm
 	    console.log("pdlabel program: ", program);
 	    for (var pos in program) {
 	        var cell = program[pos];
+		console.log("pdlabel pos:",pos,"cell:", cell);
 		if (cell.label != undefined) {
 		    program[pos] = labels[cell.label];
 		}
@@ -37,6 +38,7 @@ dasm
 	    if (line.label != undefined) {
 		labels[line.label.label] = offset;
 	    }
+
 	    else if (line.data != undefined) {
 	        if (line.data.str != undefined) {
 		   for (var i = 0; i < line.data.str.length; i++) {
@@ -54,11 +56,25 @@ dasm
 		}
 
 	    }
-	    else if (line.macrodef == undefined) {
+	    
+	    else if (line.jsr != undefined) {
+		var zeroop = 0;
+		var oooooo = 0x01;
+		var aaaaaa = predelabelize(line.jsr);
+		output.push(((0x0 | zeroop) | oooooo << 4) | aaaaaa[0] << 10);
+		
+		if (aaaaaa.length == 2) {
+		    output.push(aaaaaa[1]);
+		    offset++;
+                } 
+		
+		offset++;
+	    }
+	    
+	    else {
 		    var oooo = line[0];
 		    var aaaaaa = predelabelize(line[1]);
 		    var bbbbbb = predelabelize(line[2]);
-                    console.log(JSON.stringify([]))
 		    output.push(((0x0 | oooo) | aaaaaa[0] << 4) | bbbbbb[0] << 10);
 		    if (aaaaaa.length == 2) {
 			output.push(aaaaaa[1]);
@@ -84,56 +100,6 @@ jsr
     = _ "jsr" _ jsr:(literal / symbol) _ {
     return {"jsr": jsr};
 }
-
-defmacro 
-    = _ "#defmacro" _ name:macroname _ "(" _ paramlist:(macroname _)* ")"_ "[" _ body:macrobody _ "]" _ env:("[" _ macrobody _ "]")? _{
-	console.log("macro!");
-	console.log("name:", name,"params", paramlist, "body", body);
-	var paramstr = "";
-	for (i in paramlist) {
-	    if (i > 0) {
-		paramstr += ", ";
-	    }
-	    paramstr += paramlist[i][0];
-	}
-	var macrodef = "";
-	if (env != undefined) {
-	    macrodef += env[2] + "; ";
-	}
-	macrodef += "macros[name] = function (" + paramstr + ") {";
-	macrodef += body
-	macrodef += "}";
-	eval(macrodef);
-	return {macrodef: true};
-}
-
-macroname
-    = first:[a-zA-Z_] rest:[a-zA-Z0-9_-]* {
-	return first + rest.join("");
-    }
-
-macrobody
-    = macrobody:[^\]]* {return macrobody.join("");}
-
-macrocall
-    = _ name:macroname _ "("_ paramlist:(macroname _)* ")" _ {	
-	console.log("macrocall",macros[name]);
-	for (i in paramlist) {
-	    if (i > 0) {
-		paramstr += ", ";
-	    }
-	    paramstr += paramlist[i][0];
-	}
-	expansion = macros[name]();
-	lines = [];
-	for (var i in expansion) {
-	    lines.push(dasm.parse(expansion[i], "macroexpand"));
-	}
-	return lines;
-    }
-
-macroexpand
-    = (op / label / macrocall)*
 
 op  
     = _ instr:instr _ op1:operand _ "," _  op2:operand _ {return [instr,op1, op2];}
@@ -200,18 +166,11 @@ address
     }
     / "[" _ literal:literal _ "+" _ symbol:symbol _ "]" {
 	console.log("reg off addr: " , literal, " ", symbol);
-	var addr = 0;
 	if (literal.lenght == 1) {
-	    addr = literal[0] - 32;
+	    return [symbol[0] + 0x10, literal[0] - 32]
 	}
 	else {
-	    addr = literal[1];
-	}
-	if (symbol.label == undefined) {
-	    return [symbol[0] + 16, addr];
-	}
-	else {
-	    return {"error":symbol};
+	    return [symbol[0] + 0x10, literal[1]]
 	}
     }
 

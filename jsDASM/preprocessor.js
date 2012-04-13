@@ -392,7 +392,7 @@ preprocessor = (function(){
           pos = savedPos1;
         }
         var result2 = result1 !== null
-          ? (function(symbol) { console.log("label",symbol); return ":" + symbol + " ";})(result1[2])
+          ? (function(symbol) { console.log("label",symbol); return ":" + symbol + "\n";})(result1[2])
           : null;
         if (result2 !== null) {
           var result0 = result2;
