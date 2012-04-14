@@ -1,13 +1,40 @@
 <html>
   <head>
+    <style>
+      canvas {
+      image-rendering: optimizeSpeed;             // Older versions of FF
+      image-rendering: -moz-crisp-edges;          // FF 6.0+
+      image-rendering: -webkit-optimize-contrast; // Webkit
+      //  (Safari now, Chrome soon)
+      image-rendering: optimize-contrast;         // Possible future browsers.
+      -ms-interpolation-mode: nearest-neighbor;   // IE
+      -moz-border-radius: 25px;
+      border-radius: 25px;
+      border-style: solid;
+      border-color: #0b0b0b;
+      border-width: 25px;
+      }
+      #crtbg {
+      background-color: #f00;
+      height: 400px;
+      }
+    </style>
     <script src="dasm.js"></script>
     <script src="dscheme.js"></script>
     <script src="dcpu.js"></script>
+    <script src="crtplugin.js"></script>
     <script src="preprocessor.js"></script>
     <script>
+      window.onload = function() {
+
       cpu = new DCPUCore();
       cpu.__init__();
 
+      var crt = new DCPUCrt();
+      crt.init("crt", "font.png");
+      cpu.register_plugin(crt);
+      };
+      
       function load() {
           cpu.__init__();
           var program = dasm.parse(document.getElementById("code").value);
@@ -35,6 +62,9 @@
     <input type="button" name="load" value="Load" onclick="load()">
     <input type="button" name="step" value="Step" onclick="dostep()">
     <input type="button" name="pre" value="Pre" onclick="pre()">
+    <div id="ctrbg">
+      <canvas id="crt" width="512" height="384"></canvas>
+    </div>
     <div id="debug">Debug:<br></div>
   </body>
 </html>

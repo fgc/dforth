@@ -1,85 +1,33 @@
-(function() {
- }()
-);
-
 function DCPUCore() {
-    //Options
-    this._MEMORY_SIZE = 0x10000;
-    this._MEM_DEFAULT = 0;
-    this._REG_DEFAULT = 0;
-    this._PC_DEFAULT = 0;
-    this._SP_DEFAULT = 0xFFFF;
-    this._CPU_MHZ = 100;
-    
-    //OpCodes
-    this.NOP = 0;	 
-    this.RES = 0;  // -RESERVED- (This implementation treats as NOP)
-    this.SET = 1;  // Sets value of b to a
-    this.ADD = 2;  // Adds b to a, sets O
-    this.SUB = 3;  // Subtracts b from a, sets O
-    this.MUL = 4;  // Multiplies a by b, sets O
-    this.DIV = 5;  // Divides a by b, sets O
-    this.MOD = 6;  // Remainder of a over b
-    this.SHL = 7;  // Shifts a left b places, sets O
-    this.SHR = 8;  // Shifts a right b places, sets O
-    this.AND = 9;  // Binary and of a and b
-    this.BOR = 10; // Binary or of a and b
-    this.XOR = 11; // Binary xor of a and b
-    this.IFE = 12; // Skips one instruction if a!=b
-    this.IFN = 13; // Skips one instruction if a==b
-    this.IFG = 14; // Skips one instruction if a<=b
-    this.IFB = 15; // Skips one instruction if (a&b)==0
 
-    //Values
-    //Various Value Codes (Parenthesis = memory lookup of value)
-    this.REG = Number.range(0,8);		   //Register value - register values
-    this.REG_MEM = Number.range(8,16);		   //(Register value) - value at address in registries
-    this.MEM_OFFSET_REG = Number.range(16,24);	   //(Next word of ram + register value) - memory address offset by register value
-    this.POP = 24;			   //Value at stack address, then increases stack counter
-    this.PEEK = 25;			   //Value at stack address
-    this.PUSH = 26;			   //Decreases stack address, then value at stack address
-    this.SP = 27;			   //Current stack pointer value - current stack address
-    this.PC = 28;			   //Program counter - current program counter
-    this.O = 29;			   //Overflow - current value of the overflow
-    this.MEM = 30;			   //(Next word of ram) - memory address
-    this.MEM_LIT = 31;			   //Next word of ram - literal, does nothing on assign
-    this.NUM_LIT = Number.range(32,64);	   //Literal value 0-31 - literal, does nothing on assign
+    this._CPU_MHZ = 100;
+
+    this._OP_PART = 0xF; 
+    this._AV_PART = 0x3F0;
+    this._BV_PART = 0xFC00;
+
+    this._OP_POS = 0; 
+    this._AV_POS = 4; 
+    this._BV_POS = 10;
     
-    
-    //opcodes------|bbbbbbaaaaaaoooo
-    this._OP_PORTION = 0xF; 
-    this._AV_PORTION = 0x3F0;
-    this._BV_PORTION = 0xFC00;
-    // Bit positions for the above
-    this._OP_POSITION = 0; 
-    this._AV_POSITION = 4; 
-    this._BV_POSITION = 10;
-    
-    
-    //registers (A, B, C, X, Y, Z, I, J)
-    this._NUM_REGISTERS = 8;
-    
-    this.REGISTER_NAMES = ['SP', 'PC', 'O','A', 'B', 'C', 'X', 'Y', 'Z', 'I', 'J'];
-    this.SPECIAL_REGISTERS = ['SP', 'PC', 'O'];
-    this.LETTER_REGISTERS = ['A', 'B', 'C', 'X', 'Y', 'Z', 'I', 'J'];
-    
-    //All values are 16 bit unsigned
     this._MAX_VAL = 0xFFFF;
+
+    this.plugins = [];
 }
 
-DCPUCore.prototype._buffer = function (size, default_value) {
+DCPUCore.prototype._buffer = function (size, value) {
     var b = new Uint16Array(size);
     for (i in b) {
-	b[i] = default_value;
+	b[i] = value;
     }
     return b;
 };
 
 DCPUCore.prototype._init_cpu = function (size, num_registers) {
-    this.memory = this._buffer(size, this._MEM_DEFAULT);
-    this.registers = this._buffer(this._NUM_REGISTERS, this._REG_DEFAULT);
-    this.pc = this._PC_DEFAULT;
-    this.sp = this._SP_DEFAULT;
+    this.memory = this._buffer(size, 0);
+    this.registers = this._buffer(num_registers, 0);
+    this.pc = 0;
+    this.sp = 0;
     this.o = 0x0000;
 };
 
@@ -88,84 +36,78 @@ DCPUCore.prototype._has_overflown = function (val) {
 };
 
 DCPUCore.prototype._overflown = function (val) {
-    this.o = this._has_overflown(val)?0x0001:0x0000;
+    this.o = this._has_overflown(val)?0x0001:0x0000; //Wrong, this is op-specific
     return val & this._MAX_VAL;
 };
 
-DCPUCore.prototype._tick = function (op, a, b) {
-    console.log("_tick, op:" + op + " a:"+a +" b:"+b);
-    switch(op) {
-    case this.NOP:
+DCPUCore.prototype._nbop = function (nbop, a) {
+    console.log("nbop:", nbop, a);
+    switch(nbop) {
+    case 0x01: //JSR
+	--this.sp
+	this.sp &= 0xFFFF;
+	this.memory[this.sp] = this.pc;
+	this.pc = a;
 	return;
-	break;
-    case this.SET:
-	a = b;
-	return this._overflown(a);
-	break;
-    case this.ADD:
+    default:
+	this._abort ("UNKNOWN NON-BASIC OP");
+    }
+};
+
+DCPUCore.prototype._op = function (op, a, b) {
+    switch(op) {
+    case 0x1: //SET
+	return this._overflown(b);
+    case 0x2: //ADD
 	a += b;
 	return this._overflown(a);
-	break;
-    case this.SUB:
+    case 0x3: //SUB
 	a -= b;
 	return this._overflown(a);
-	break;
-    case this.MUL:
+    case 0x4: //MUL
 	a *= b;
 	return this._overflown(a);
-	break;
-    case this.DIV:
+    case 0x5: //DIV
 	a /= b;
 	return this._overflown(a);
-	break;
-    case this.MOD:
+    case 0x6: //MOD
 	a %= b;
 	return this._overflown(a);
-	break;
-    case this.SHL:
+    case 0x7: //SHL
 	a <<= b;
 	return this._overflown(a);
-	break;
-    case this.SHR:
+    case 0x8: //SHR
 	a >>= b;
 	return this._overflown(a);
-	break;
-    case this.AND:
+    case 0x9: //AND
 	a &= b;
 	return a;
-	break;
-    case this.BOR:
+    case 0xa: //BOR
 	a |= b;
 	return a;
-	break;
-    case this.XOR:
+    case 0xb: //XOR
 	a ^= b;
 	return a;
-	break;
-    case this.IFE:
+    case 0xc: //IFE
 	if (a != b) {
 	    this.stepover = true;
 	}
 	return;
-	break;
-    case this.IFN:
+    case 0xd: //IFN
 	if (a == b) {
 	    this.stepover = true;
 	}
 	return;
-	break;
-    case this.IFG:
+    case 0xe: //IFG
 	if (a <= b) {
 	    this.stepover = true;
 	}
 	return;
-	break;
-    case this.IFB:
-	if (! (a|b)) {
-	    this._incPC();
+    case 0xf: //IFB
+	if ((a&b) == 0) {
+	    this.stepover = true;
 	}
 	return;
-	break;
     default:
 	this._abort("UNKNOWN OPCODE: " + op);
     }
@@ -206,18 +148,18 @@ DCPUCore.prototype._set = function (target,value) {
     case 21:
     case 22:
     case 23:
-        console.log("finaltarget:" + (this.destpointer));
 	this.memory[this.destpointer] = value;
 	break;
     case 24:
-	return;
+	this._abort("CANNOT SET POP");
 	break;
     case 25:
 	this.memory[this.sp] = value;
 	break;
     case 26:
-	console.log("push set: " + this.sp + " " + (this.sp -1));
-	this.memory[--this.sp] = value;
+	--this.sp;
+	this.sp &= 0xFFFF;
+	this.memory[this.sp] = value;
 	break;
     case 27:
 	this.sp = value;
@@ -231,7 +173,8 @@ DCPUCore.prototype._set = function (target,value) {
     case 30:
 	this.memory[this.destpointer] = value;
 	break;
-	//Everything else would be assigning to a literal value, silently fails.
+    default:
+	this._abort("CANNOT SET TO LITERAL VALUE");
     }
 };
 
@@ -245,7 +188,6 @@ DCPUCore.prototype._get = function (target) {
 };
 
 DCPUCore.prototype._tget = function (target) {
-	//ALWAYS GET A BEFORE B - IF BOTH DO PC++ THEN IT WILL FAIL IF YOU GET B BEFORE A.
     switch(target) {
     case 0:
     case 1:
@@ -279,13 +221,13 @@ DCPUCore.prototype._tget = function (target) {
 	return this.memory[this.lastpointer];
 	break;
     case 24:
-	return this.memory[this.sp++];
+	return this.memory[this.sp++]; //stack can underflow into the start of RAM!!!
 	break;
     case 25:
 	return this.memory[this.sp];
 	break;
     case 26:
-	return;
+	this._abort("CANNOT GET A VALUE FROM PUSH");
 	break;
     case 27:
 	return this.sp;
@@ -309,196 +251,57 @@ DCPUCore.prototype._tget = function (target) {
     }
 };
 
-DCPUCore.prototype._setval = function (vc, f, justcheck) {
-    console.log("_setval:" + vc + " " + f);
-    if (vc in this.REG) {
-	console.log("vc is register: " + vc);
-	if (f == undefined) {
-	    return this.registers[vc];
-	}
-	else {
-	    this.registers[vc] = f;
-	    return;
-	}
-    }
-
-    if (vc in this.REG_MEM) {
-	vc -= this.REG_MEM;
-	if (f == undefined) {
-	    return this.memory[this.registers[vc]];
-	}
-	else {
-	    this.memory[this.registers[vc]] = f;
-	    return;
-	}
-    }
-
-    if (vc in this.MEM_OFFSET_REG) {
-	vc -= this.MEM_OFFSET_REG[0];
-	this._incPC();
-	var nex_mem = this.memory[this.pc];
-	var reg = this.registers[vc];
-	vc = this._overflown(reg + next_mem);
-	if (f == undefined) {
-	    return this.memory[vc];
-	}
-	else {
-	    this.memory[vc] = f;
-	    return;
-	}
-    }
-
-    if (vc == this.POP) {
-	if (f == undefined) {
-	    vc = this.memory[this.sp];
-	}
-	else {
-	    this.memory[this.sp] = f;
-	}
-	this._incSP()
-	return vc;
-    }
-
-    if (vc == this.PEEK) {
-	if (f == undefined) {
-	    return this.memory[this.sp];
-	}
-	else {
-	    return;
-	}
-    }
-    
-    if (vc == this.PUSH) {
-	console.log("push:"+this.sp+" "+f);
-	if (f == undefined) {
-	    return vc;
-	}
-	else {
-	    this._decSP()
-	    this.memory[this.sp] = f;
-	    return
-	}
-    }
-
-    if (vc == this.SP) {
-	if (f == undefined) {
-	    return this.sp;
-	}
-	else {
-	    this.sp = f;
-	}
-    }
-
-    if (vc == this.PC) {
-	if (f == undefined) {
-	    return this.pc;
-	}
-	else {
-	    this.pc = f;
-	}
-    }
-
-    if (vc == this.O) {
-	if (f == undefined) {
-	    return this.o;
-	}
-	else {
-	    this.o = f;
-	}
-    }
-
-    if (vc == this.MEM) {
-	console.log("vc is mem");
-	if (justcheck != undefined) {
-	    return this.MEM;
-	}
-        this._incPC()
-	if (f == undefined) {
-	    return this.memory[this.memory[vc]];
-	}
-	else {
-	    this.memory[this.memory[vc]] = f;
-	}
-    }
-
-    if (vc == this.MEM_LIT) {
-	if (f != undefined) {
-	    return;
-	}
-	this._incPC();
-	return this.memory[this.pc];
-    }
-
-    if (this.NUM_LIT.indexOf(vc) != -1) {
-	if (f != undefined) {
-	    return;
-	}
-	return vc - this.NUM_LIT[0]
-    }
-
-    this._abort("UNKNOWN VALUE CODE: " + vc);
-
-};
-
-
-DCPUCore.prototype._getval = function (vc) {
-    return this._setval(vc, undefined);
-};
-
-DCPUCore.prototype._checkval = function (vc) {
-    return this._setval(vc, undefined, undefined);
-};
-
-DCPUCore.prototype._incPC = function () {
-    this.pc = this._overflown(this.pc + 1);
-};
-
-DCPUCore.prototype._incSP = function () {
-    this.sp = this._overflown(this.sp + 1);
-};
-
-DCPUCore.prototype._decSP = function () {
-    this.sp = this._overflown(this.sp - 1);
-};
-
 DCPUCore.prototype.tick = function () {
     var v = this.memory[this.pc++];
-    this.lastpointer = undefined;
-    this.destpointer = undefined;
-    var op = (v & this._OP_PORTION) >>> this._OP_POSITION;
-    var a = (v & this._AV_PORTION) >>> this._AV_POSITION;
-    var b = (v & this._BV_PORTION) >>> this._BV_POSITION;
-    console.log("op:" + op);
-    console.log("a:" + a);
-    console.log("b:" + b);
-    var aval = this._get(a);
-    if (this.lastpointer != undefined) {
-	this.destpointer = this.lastpointer;
-    }
-    var bval = this._get(b);
-
-    console.log("aval:" + aval);
-    console.log("bval:" + bval);
     if (!this.stepover) {
-	var fval = this._tick(op, aval, bval);
+	this.lastpointer = undefined;
+	this.destpointer = undefined;
 	
-	console.log("fval:"+fval);
+	var op = (v & this._OP_PART) >>> this._OP_POS;
 	
-	if (fval != undefined) {
-	    fval = this._overflown(fval, true);
-	    this._set(a, fval);
+	if (op == 0x0) {
+	    var nbop = (v & this._AV_PART) >>> this._AV_POS;
+	    var a = (v & this._BV_PART) >>> this._BV_POS;
+	    this._nbop(nbop, this._get(a));
 	}
+	else {
+
+	    var a = (v & this._AV_PART) >>> this._AV_POS;
+	    var b = (v & this._BV_PART) >>> this._BV_POS;
+	    
+	    var aval = this._get(a);
+	    if (this.lastpointer != undefined) {
+		this.destpointer = this.lastpointer;
+	    }
+	    var bval = this._get(b);
+	    
+	    var fval = this._op(op, aval, bval);
+	    
+	    if (fval != undefined) {
+		fval = this._overflown(fval, true);
+		this._set(a, fval);
+	    }
+	}
+
     }
     else {
-	console.log("stepping over: " + (this.pc -1));
 	this.stepover = false; 
-    }	
+    }
+    
+    for (var pi in this.plugins) {
+	this.plugins[pi].tick();
+    }
 };
 
 DCPUCore.prototype.load = function (buffer) {
     for (var pos in buffer) {
 	this.memory[pos] = buffer[pos];
     }
+};
+
+DCPUCore.prototype.register_plugin = function (plugin) {
+    plugin.setcpu(this);
+    this.plugins.push(plugin);
 };
     
 DCPUCore.prototype.run = function () {
@@ -518,51 +321,7 @@ DCPUCore.prototype.delayed = function (dt) {
 };
 
 DCPUCore.prototype.__init__ = function () {
-    this._init_cpu(this._MEMORY_SIZE, this._NUM_REGISTERS);
+    this._init_cpu(0x10000, 8);
     this.stepover = false;
     this.dt = 0;
 };
-
-
-Number.range = function() {
-  var start, end, step;
-  var array = [];
-
-  switch(arguments.length){
-    case 0:
-      throw new Error('range() expected at least 1 argument, got 0 - must be specified as [start,] stop[, step]');
-      return array;
-    case 1:
-      start = 0;
-      end = Math.floor(arguments[0]) - 1;
-      step = 1;
-      break;
-    case 2:
-    case 3:
-    default:
-      start = Math.floor(arguments[0]);
-      end = Math.floor(arguments[1]) - 1;
-      var s = arguments[2];
-      if (typeof s === 'undefined'){
-        s = 1;
-      }
-      step = Math.floor(s) || (function(){ throw new Error('range() step argument must not be zero'); })();
-      break;
-   }
-
-  if (step > 0){
-    for (var i = start; i <= end; i += step){
-      array.push(i);
-    }
-  } else if (step < 0) {
-    step = -step;
-    if (start > end){
-      for (var i = start; i > end + 1; i -= step){
-        array.push(i);
-      }
-    }
-  }
-  return array;
-};
-
-

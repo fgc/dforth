@@ -295,16 +295,19 @@ set pc, start
 	jsr _KEY
 
 	set b, [cursorpos] 	;echo
+	bor a, 0xA000
 	set [0x8000 + b], a
 	add [cursorpos], 1
 	
 	set push, a
 	NEXT()
-:_KEY   
-	set a, [0x9000]
-	ife a, 0
+:_KEY
+	set b, [0x9010]
+	ife b, 0
 	set pc, _KEY
-	set [0x9000], 0
+	set a, [b]
+	set [b], 0
+	set [0x9010], 0
 	set pc, pop
 
 	defword("EMIT",0,"EMIT", true)
