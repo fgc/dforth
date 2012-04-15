@@ -31,10 +31,6 @@
       crt.init("crt", "font.png");
       cpu.register_plugin(crt);
 
-      var keyboard = new DCPUKeyboard();
-      keyboard.init();
-      cpu.register_plugin(keyboard);
-
       };
       
       function load() {
@@ -43,7 +39,14 @@
           cpu.load(program);
       }
       
-      function dostep() {
+      function run() {
+      keyboard = new DCPUKeyboard();
+      keyboard.init();
+      cpu.register_plugin(keyboard);
+      cpu.run();
+      }
+
+      function step() {
           cpu.tick();
           document.getElementById("debug").innerHTML = "pc: " + cpu.pc + "<br>";
           document.getElementById("debug").innerHTML += "sp: " + cpu.sp + "<br>";
@@ -51,7 +54,7 @@
           document.getElementById("debug").innerHTML += JSON.stringify(cpu.registers) + "<br>";
       }
       
-      function pre() {
+      function preprocess() {
           program = preprocessor.parse(document.getElementById("macro").value);
           document.getElementById("code").value = program;
       }
@@ -61,9 +64,10 @@
   <body>
     <textarea id="macro" cols="20" rows="20"></textarea>
     <textarea id="code" cols="30" rows="20"></textarea>
+    <input type="button" name="preprocess" value="Preprocess" onclick="preprocess()">
     <input type="button" name="load" value="Load" onclick="load()">
-    <input type="button" name="step" value="Step" onclick="dostep()">
-    <input type="button" name="pre" value="Pre" onclick="pre()">
+    <input type="button" name="run" value="Run" onclick="run()">
+    <input type="button" name="step" value="Step" onclick="step()">
     <canvas id="crt" width="512" height="384"></canvas>
     <div id="debug">Debug:<br></div>
   </body>

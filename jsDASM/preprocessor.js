@@ -30,6 +30,8 @@ preprocessor = (function(){
         "op1": parse_op1,
         "op2": parse_op2,
         "operand": parse_operand,
+        "other": parse_other,
+        "special": parse_special,
         "symbol": parse_symbol,
         "whiteSpace": parse_whiteSpace
       };
@@ -268,7 +270,7 @@ preprocessor = (function(){
           pos = savedPos1;
         }
         var result2 = result1 !== null
-          ? (function(instr, op1, op2) {return instr + " " + op1 + ", " + op2 + "\n"})(result1[1], result1[3], result1[7])
+          ? (function(instr, op1, op2) {return instr.toLowerCase() + " " + op1 + ", " + op2 + "\n"})(result1[1], result1[3], result1[7])
           : null;
         if (result2 !== null) {
           var result0 = result2;
@@ -329,7 +331,7 @@ preprocessor = (function(){
           pos = savedPos1;
         }
         var result2 = result1 !== null
-          ? (function(instr, op) {return instr + " " + op + "\n";})(result1[1], result1[3])
+          ? (function(instr, op) {return instr.toLowerCase() + " " + op + "\n";})(result1[1], result1[3])
           : null;
         if (result2 !== null) {
           var result0 = result2;
@@ -1028,186 +1030,381 @@ preprocessor = (function(){
         
         
         if (input.substr(pos, 3) === "set") {
-          var result15 = "set";
+          var result30 = "set";
           pos += 3;
         } else {
-          var result15 = null;
+          var result30 = null;
           if (reportMatchFailures) {
             matchFailed("\"set\"");
           }
         }
-        if (result15 !== null) {
-          var result0 = result15;
+        if (result30 !== null) {
+          var result0 = result30;
         } else {
-          if (input.substr(pos, 3) === "add") {
-            var result14 = "add";
+          if (input.substr(pos, 3) === "SET") {
+            var result29 = "SET";
             pos += 3;
           } else {
-            var result14 = null;
+            var result29 = null;
             if (reportMatchFailures) {
-              matchFailed("\"add\"");
+              matchFailed("\"SET\"");
             }
           }
-          if (result14 !== null) {
-            var result0 = result14;
+          if (result29 !== null) {
+            var result0 = result29;
           } else {
-            if (input.substr(pos, 3) === "sub") {
-              var result13 = "sub";
+            if (input.substr(pos, 3) === "add") {
+              var result28 = "add";
               pos += 3;
             } else {
-              var result13 = null;
+              var result28 = null;
               if (reportMatchFailures) {
-                matchFailed("\"sub\"");
+                matchFailed("\"add\"");
               }
             }
-            if (result13 !== null) {
-              var result0 = result13;
+            if (result28 !== null) {
+              var result0 = result28;
             } else {
-              if (input.substr(pos, 3) === "mul") {
-                var result12 = "mul";
+              if (input.substr(pos, 3) === "ADD") {
+                var result27 = "ADD";
                 pos += 3;
               } else {
-                var result12 = null;
+                var result27 = null;
                 if (reportMatchFailures) {
-                  matchFailed("\"mul\"");
+                  matchFailed("\"ADD\"");
                 }
               }
-              if (result12 !== null) {
-                var result0 = result12;
+              if (result27 !== null) {
+                var result0 = result27;
               } else {
-                if (input.substr(pos, 3) === "div") {
-                  var result11 = "div";
+                if (input.substr(pos, 3) === "sub") {
+                  var result26 = "sub";
                   pos += 3;
                 } else {
-                  var result11 = null;
+                  var result26 = null;
                   if (reportMatchFailures) {
-                    matchFailed("\"div\"");
+                    matchFailed("\"sub\"");
                   }
                 }
-                if (result11 !== null) {
-                  var result0 = result11;
+                if (result26 !== null) {
+                  var result0 = result26;
                 } else {
-                  if (input.substr(pos, 3) === "mod") {
-                    var result10 = "mod";
+                  if (input.substr(pos, 3) === "SUB") {
+                    var result25 = "SUB";
                     pos += 3;
                   } else {
-                    var result10 = null;
+                    var result25 = null;
                     if (reportMatchFailures) {
-                      matchFailed("\"mod\"");
+                      matchFailed("\"SUB\"");
                     }
                   }
-                  if (result10 !== null) {
-                    var result0 = result10;
+                  if (result25 !== null) {
+                    var result0 = result25;
                   } else {
-                    if (input.substr(pos, 3) === "shl") {
-                      var result9 = "shl";
+                    if (input.substr(pos, 3) === "mul") {
+                      var result24 = "mul";
                       pos += 3;
                     } else {
-                      var result9 = null;
+                      var result24 = null;
                       if (reportMatchFailures) {
-                        matchFailed("\"shl\"");
+                        matchFailed("\"mul\"");
                       }
                     }
-                    if (result9 !== null) {
-                      var result0 = result9;
+                    if (result24 !== null) {
+                      var result0 = result24;
                     } else {
-                      if (input.substr(pos, 3) === "shr") {
-                        var result8 = "shr";
+                      if (input.substr(pos, 3) === "MUL") {
+                        var result23 = "MUL";
                         pos += 3;
                       } else {
-                        var result8 = null;
+                        var result23 = null;
                         if (reportMatchFailures) {
-                          matchFailed("\"shr\"");
+                          matchFailed("\"MUL\"");
                         }
                       }
-                      if (result8 !== null) {
-                        var result0 = result8;
+                      if (result23 !== null) {
+                        var result0 = result23;
                       } else {
-                        if (input.substr(pos, 3) === "and") {
-                          var result7 = "and";
+                        if (input.substr(pos, 3) === "div") {
+                          var result22 = "div";
                           pos += 3;
                         } else {
-                          var result7 = null;
+                          var result22 = null;
                           if (reportMatchFailures) {
-                            matchFailed("\"and\"");
+                            matchFailed("\"div\"");
                           }
                         }
-                        if (result7 !== null) {
-                          var result0 = result7;
+                        if (result22 !== null) {
+                          var result0 = result22;
                         } else {
-                          if (input.substr(pos, 3) === "bor") {
-                            var result6 = "bor";
+                          if (input.substr(pos, 3) === "DIV") {
+                            var result21 = "DIV";
                             pos += 3;
                           } else {
-                            var result6 = null;
+                            var result21 = null;
                             if (reportMatchFailures) {
-                              matchFailed("\"bor\"");
+                              matchFailed("\"DIV\"");
                             }
                           }
-                          if (result6 !== null) {
-                            var result0 = result6;
+                          if (result21 !== null) {
+                            var result0 = result21;
                           } else {
-                            if (input.substr(pos, 3) === "xor") {
-                              var result5 = "xor";
+                            if (input.substr(pos, 3) === "mod") {
+                              var result20 = "mod";
                               pos += 3;
                             } else {
-                              var result5 = null;
+                              var result20 = null;
                               if (reportMatchFailures) {
-                                matchFailed("\"xor\"");
+                                matchFailed("\"mod\"");
                               }
                             }
-                            if (result5 !== null) {
-                              var result0 = result5;
+                            if (result20 !== null) {
+                              var result0 = result20;
                             } else {
-                              if (input.substr(pos, 3) === "ife") {
-                                var result4 = "ife";
+                              if (input.substr(pos, 3) === "MOD") {
+                                var result19 = "MOD";
                                 pos += 3;
                               } else {
-                                var result4 = null;
+                                var result19 = null;
                                 if (reportMatchFailures) {
-                                  matchFailed("\"ife\"");
+                                  matchFailed("\"MOD\"");
                                 }
                               }
-                              if (result4 !== null) {
-                                var result0 = result4;
+                              if (result19 !== null) {
+                                var result0 = result19;
                               } else {
-                                if (input.substr(pos, 3) === "ifn") {
-                                  var result3 = "ifn";
+                                if (input.substr(pos, 3) === "shl") {
+                                  var result18 = "shl";
                                   pos += 3;
                                 } else {
-                                  var result3 = null;
+                                  var result18 = null;
                                   if (reportMatchFailures) {
-                                    matchFailed("\"ifn\"");
+                                    matchFailed("\"shl\"");
                                   }
                                 }
-                                if (result3 !== null) {
-                                  var result0 = result3;
+                                if (result18 !== null) {
+                                  var result0 = result18;
                                 } else {
-                                  if (input.substr(pos, 3) === "ifg") {
-                                    var result2 = "ifg";
+                                  if (input.substr(pos, 3) === "SHL") {
+                                    var result17 = "SHL";
                                     pos += 3;
                                   } else {
-                                    var result2 = null;
+                                    var result17 = null;
                                     if (reportMatchFailures) {
-                                      matchFailed("\"ifg\"");
+                                      matchFailed("\"SHL\"");
                                     }
                                   }
-                                  if (result2 !== null) {
-                                    var result0 = result2;
+                                  if (result17 !== null) {
+                                    var result0 = result17;
                                   } else {
-                                    if (input.substr(pos, 3) === "ifb") {
-                                      var result1 = "ifb";
+                                    if (input.substr(pos, 3) === "shr") {
+                                      var result16 = "shr";
                                       pos += 3;
                                     } else {
-                                      var result1 = null;
+                                      var result16 = null;
                                       if (reportMatchFailures) {
-                                        matchFailed("\"ifb\"");
+                                        matchFailed("\"shr\"");
                                       }
                                     }
-                                    if (result1 !== null) {
-                                      var result0 = result1;
+                                    if (result16 !== null) {
+                                      var result0 = result16;
                                     } else {
-                                      var result0 = null;;
+                                      if (input.substr(pos, 3) === "SHR") {
+                                        var result15 = "SHR";
+                                        pos += 3;
+                                      } else {
+                                        var result15 = null;
+                                        if (reportMatchFailures) {
+                                          matchFailed("\"SHR\"");
+                                        }
+                                      }
+                                      if (result15 !== null) {
+                                        var result0 = result15;
+                                      } else {
+                                        if (input.substr(pos, 3) === "and") {
+                                          var result14 = "and";
+                                          pos += 3;
+                                        } else {
+                                          var result14 = null;
+                                          if (reportMatchFailures) {
+                                            matchFailed("\"and\"");
+                                          }
+                                        }
+                                        if (result14 !== null) {
+                                          var result0 = result14;
+                                        } else {
+                                          if (input.substr(pos, 3) === "AND") {
+                                            var result13 = "AND";
+                                            pos += 3;
+                                          } else {
+                                            var result13 = null;
+                                            if (reportMatchFailures) {
+                                              matchFailed("\"AND\"");
+                                            }
+                                          }
+                                          if (result13 !== null) {
+                                            var result0 = result13;
+                                          } else {
+                                            if (input.substr(pos, 3) === "bor") {
+                                              var result12 = "bor";
+                                              pos += 3;
+                                            } else {
+                                              var result12 = null;
+                                              if (reportMatchFailures) {
+                                                matchFailed("\"bor\"");
+                                              }
+                                            }
+                                            if (result12 !== null) {
+                                              var result0 = result12;
+                                            } else {
+                                              if (input.substr(pos, 3) === "BOR") {
+                                                var result11 = "BOR";
+                                                pos += 3;
+                                              } else {
+                                                var result11 = null;
+                                                if (reportMatchFailures) {
+                                                  matchFailed("\"BOR\"");
+                                                }
+                                              }
+                                              if (result11 !== null) {
+                                                var result0 = result11;
+                                              } else {
+                                                if (input.substr(pos, 3) === "xor") {
+                                                  var result10 = "xor";
+                                                  pos += 3;
+                                                } else {
+                                                  var result10 = null;
+                                                  if (reportMatchFailures) {
+                                                    matchFailed("\"xor\"");
+                                                  }
+                                                }
+                                                if (result10 !== null) {
+                                                  var result0 = result10;
+                                                } else {
+                                                  if (input.substr(pos, 3) === "XOR") {
+                                                    var result9 = "XOR";
+                                                    pos += 3;
+                                                  } else {
+                                                    var result9 = null;
+                                                    if (reportMatchFailures) {
+                                                      matchFailed("\"XOR\"");
+                                                    }
+                                                  }
+                                                  if (result9 !== null) {
+                                                    var result0 = result9;
+                                                  } else {
+                                                    if (input.substr(pos, 3) === "ife") {
+                                                      var result8 = "ife";
+                                                      pos += 3;
+                                                    } else {
+                                                      var result8 = null;
+                                                      if (reportMatchFailures) {
+                                                        matchFailed("\"ife\"");
+                                                      }
+                                                    }
+                                                    if (result8 !== null) {
+                                                      var result0 = result8;
+                                                    } else {
+                                                      if (input.substr(pos, 3) === "IFE") {
+                                                        var result7 = "IFE";
+                                                        pos += 3;
+                                                      } else {
+                                                        var result7 = null;
+                                                        if (reportMatchFailures) {
+                                                          matchFailed("\"IFE\"");
+                                                        }
+                                                      }
+                                                      if (result7 !== null) {
+                                                        var result0 = result7;
+                                                      } else {
+                                                        if (input.substr(pos, 3) === "ifn") {
+                                                          var result6 = "ifn";
+                                                          pos += 3;
+                                                        } else {
+                                                          var result6 = null;
+                                                          if (reportMatchFailures) {
+                                                            matchFailed("\"ifn\"");
+                                                          }
+                                                        }
+                                                        if (result6 !== null) {
+                                                          var result0 = result6;
+                                                        } else {
+                                                          if (input.substr(pos, 3) === "IFN") {
+                                                            var result5 = "IFN";
+                                                            pos += 3;
+                                                          } else {
+                                                            var result5 = null;
+                                                            if (reportMatchFailures) {
+                                                              matchFailed("\"IFN\"");
+                                                            }
+                                                          }
+                                                          if (result5 !== null) {
+                                                            var result0 = result5;
+                                                          } else {
+                                                            if (input.substr(pos, 3) === "ifg") {
+                                                              var result4 = "ifg";
+                                                              pos += 3;
+                                                            } else {
+                                                              var result4 = null;
+                                                              if (reportMatchFailures) {
+                                                                matchFailed("\"ifg\"");
+                                                              }
+                                                            }
+                                                            if (result4 !== null) {
+                                                              var result0 = result4;
+                                                            } else {
+                                                              if (input.substr(pos, 3) === "IFG") {
+                                                                var result3 = "IFG";
+                                                                pos += 3;
+                                                              } else {
+                                                                var result3 = null;
+                                                                if (reportMatchFailures) {
+                                                                  matchFailed("\"IFG\"");
+                                                                }
+                                                              }
+                                                              if (result3 !== null) {
+                                                                var result0 = result3;
+                                                              } else {
+                                                                if (input.substr(pos, 3) === "ifb") {
+                                                                  var result2 = "ifb";
+                                                                  pos += 3;
+                                                                } else {
+                                                                  var result2 = null;
+                                                                  if (reportMatchFailures) {
+                                                                    matchFailed("\"ifb\"");
+                                                                  }
+                                                                }
+                                                                if (result2 !== null) {
+                                                                  var result0 = result2;
+                                                                } else {
+                                                                  if (input.substr(pos, 3) === "IFB") {
+                                                                    var result1 = "IFB";
+                                                                    pos += 3;
+                                                                  } else {
+                                                                    var result1 = null;
+                                                                    if (reportMatchFailures) {
+                                                                      matchFailed("\"IFB\"");
+                                                                    }
+                                                                  }
+                                                                  if (result1 !== null) {
+                                                                    var result0 = result1;
+                                                                  } else {
+                                                                    var result0 = null;;
+                                                                  };
+                                                                };
+                                                              };
+                                                            };
+                                                          };
+                                                        };
+                                                      };
+                                                    };
+                                                  };
+                                                };
+                                              };
+                                            };
+                                          };
+                                        };
+                                      };
                                     };
                                   };
                                 };
@@ -1243,26 +1440,90 @@ preprocessor = (function(){
         
         
         if (input.substr(pos, 3) === "dat") {
-          var result2 = "dat";
+          var result5 = "dat";
           pos += 3;
         } else {
-          var result2 = null;
+          var result5 = null;
           if (reportMatchFailures) {
             matchFailed("\"dat\"");
           }
         }
+        if (result5 !== null) {
+          var result0 = result5;
+        } else {
+          var savedPos0 = pos;
+          if (input.substr(pos, 3) === "DAT") {
+            var result3 = "DAT";
+            pos += 3;
+          } else {
+            var result3 = null;
+            if (reportMatchFailures) {
+              matchFailed("\"DAT\"");
+            }
+          }
+          if (result3 !== null) {
+            if (input.substr(pos, 3) === "jsr") {
+              var result4 = "jsr";
+              pos += 3;
+            } else {
+              var result4 = null;
+              if (reportMatchFailures) {
+                matchFailed("\"jsr\"");
+              }
+            }
+            if (result4 !== null) {
+              var result2 = [result3, result4];
+            } else {
+              var result2 = null;
+              pos = savedPos0;
+            }
+          } else {
+            var result2 = null;
+            pos = savedPos0;
+          }
+          if (result2 !== null) {
+            var result0 = result2;
+          } else {
+            if (input.substr(pos, 3) === "JSR") {
+              var result1 = "JSR";
+              pos += 3;
+            } else {
+              var result1 = null;
+              if (reportMatchFailures) {
+                matchFailed("\"JSR\"");
+              }
+            }
+            if (result1 !== null) {
+              var result0 = result1;
+            } else {
+              var result0 = null;;
+            };
+          };
+        }
+        
+        
+        
+        cache[cacheKey] = {
+          nextPos: pos,
+          result:  result0
+        };
+        return result0;
+      }
+      
+      function parse_symbol() {
+        var cacheKey = 'symbol@' + pos;
+        var cachedResult = cache[cacheKey];
+        if (cachedResult) {
+          pos = cachedResult.nextPos;
+          return cachedResult.result;
+        }
+        
+        
+        var result2 = parse_special();
         if (result2 !== null) {
           var result0 = result2;
         } else {
-          if (input.substr(pos, 3) === "jsr") {
-            var result1 = "jsr";
-            pos += 3;
-          } else {
-            var result1 = null;
-            if (reportMatchFailures) {
-              matchFailed("\"jsr\"");
-            }
-          }
+          var result1 = parse_other();
           if (result1 !== null) {
             var result0 = result1;
           } else {
@@ -1279,8 +1540,376 @@ preprocessor = (function(){
         return result0;
       }
       
-      function parse_symbol() {
-        var cacheKey = 'symbol@' + pos;
+      function parse_special() {
+        var cacheKey = 'special@' + pos;
+        var cachedResult = cache[cacheKey];
+        if (cachedResult) {
+          pos = cachedResult.nextPos;
+          return cachedResult.result;
+        }
+        
+        
+        var savedPos0 = pos;
+        if (input.substr(pos, 1) === "a") {
+          var result28 = "a";
+          pos += 1;
+        } else {
+          var result28 = null;
+          if (reportMatchFailures) {
+            matchFailed("\"a\"");
+          }
+        }
+        if (result28 !== null) {
+          var result1 = result28;
+        } else {
+          if (input.substr(pos, 1) === "A") {
+            var result27 = "A";
+            pos += 1;
+          } else {
+            var result27 = null;
+            if (reportMatchFailures) {
+              matchFailed("\"A\"");
+            }
+          }
+          if (result27 !== null) {
+            var result1 = result27;
+          } else {
+            if (input.substr(pos, 1) === "b") {
+              var result26 = "b";
+              pos += 1;
+            } else {
+              var result26 = null;
+              if (reportMatchFailures) {
+                matchFailed("\"b\"");
+              }
+            }
+            if (result26 !== null) {
+              var result1 = result26;
+            } else {
+              if (input.substr(pos, 1) === "B") {
+                var result25 = "B";
+                pos += 1;
+              } else {
+                var result25 = null;
+                if (reportMatchFailures) {
+                  matchFailed("\"B\"");
+                }
+              }
+              if (result25 !== null) {
+                var result1 = result25;
+              } else {
+                if (input.substr(pos, 1) === "c") {
+                  var result24 = "c";
+                  pos += 1;
+                } else {
+                  var result24 = null;
+                  if (reportMatchFailures) {
+                    matchFailed("\"c\"");
+                  }
+                }
+                if (result24 !== null) {
+                  var result1 = result24;
+                } else {
+                  if (input.substr(pos, 1) === "C") {
+                    var result23 = "C";
+                    pos += 1;
+                  } else {
+                    var result23 = null;
+                    if (reportMatchFailures) {
+                      matchFailed("\"C\"");
+                    }
+                  }
+                  if (result23 !== null) {
+                    var result1 = result23;
+                  } else {
+                    if (input.substr(pos, 1) === "x") {
+                      var result22 = "x";
+                      pos += 1;
+                    } else {
+                      var result22 = null;
+                      if (reportMatchFailures) {
+                        matchFailed("\"x\"");
+                      }
+                    }
+                    if (result22 !== null) {
+                      var result1 = result22;
+                    } else {
+                      if (input.substr(pos, 1) === "X") {
+                        var result21 = "X";
+                        pos += 1;
+                      } else {
+                        var result21 = null;
+                        if (reportMatchFailures) {
+                          matchFailed("\"X\"");
+                        }
+                      }
+                      if (result21 !== null) {
+                        var result1 = result21;
+                      } else {
+                        if (input.substr(pos, 1) === "y") {
+                          var result20 = "y";
+                          pos += 1;
+                        } else {
+                          var result20 = null;
+                          if (reportMatchFailures) {
+                            matchFailed("\"y\"");
+                          }
+                        }
+                        if (result20 !== null) {
+                          var result1 = result20;
+                        } else {
+                          if (input.substr(pos, 1) === "Y") {
+                            var result19 = "Y";
+                            pos += 1;
+                          } else {
+                            var result19 = null;
+                            if (reportMatchFailures) {
+                              matchFailed("\"Y\"");
+                            }
+                          }
+                          if (result19 !== null) {
+                            var result1 = result19;
+                          } else {
+                            if (input.substr(pos, 1) === "z") {
+                              var result18 = "z";
+                              pos += 1;
+                            } else {
+                              var result18 = null;
+                              if (reportMatchFailures) {
+                                matchFailed("\"z\"");
+                              }
+                            }
+                            if (result18 !== null) {
+                              var result1 = result18;
+                            } else {
+                              if (input.substr(pos, 1) === "Z") {
+                                var result17 = "Z";
+                                pos += 1;
+                              } else {
+                                var result17 = null;
+                                if (reportMatchFailures) {
+                                  matchFailed("\"Z\"");
+                                }
+                              }
+                              if (result17 !== null) {
+                                var result1 = result17;
+                              } else {
+                                if (input.substr(pos, 1) === "i") {
+                                  var result16 = "i";
+                                  pos += 1;
+                                } else {
+                                  var result16 = null;
+                                  if (reportMatchFailures) {
+                                    matchFailed("\"i\"");
+                                  }
+                                }
+                                if (result16 !== null) {
+                                  var result1 = result16;
+                                } else {
+                                  if (input.substr(pos, 1) === "I") {
+                                    var result15 = "I";
+                                    pos += 1;
+                                  } else {
+                                    var result15 = null;
+                                    if (reportMatchFailures) {
+                                      matchFailed("\"I\"");
+                                    }
+                                  }
+                                  if (result15 !== null) {
+                                    var result1 = result15;
+                                  } else {
+                                    if (input.substr(pos, 1) === "j") {
+                                      var result14 = "j";
+                                      pos += 1;
+                                    } else {
+                                      var result14 = null;
+                                      if (reportMatchFailures) {
+                                        matchFailed("\"j\"");
+                                      }
+                                    }
+                                    if (result14 !== null) {
+                                      var result1 = result14;
+                                    } else {
+                                      if (input.substr(pos, 1) === "J") {
+                                        var result13 = "J";
+                                        pos += 1;
+                                      } else {
+                                        var result13 = null;
+                                        if (reportMatchFailures) {
+                                          matchFailed("\"J\"");
+                                        }
+                                      }
+                                      if (result13 !== null) {
+                                        var result1 = result13;
+                                      } else {
+                                        if (input.substr(pos, 2) === "sp") {
+                                          var result12 = "sp";
+                                          pos += 2;
+                                        } else {
+                                          var result12 = null;
+                                          if (reportMatchFailures) {
+                                            matchFailed("\"sp\"");
+                                          }
+                                        }
+                                        if (result12 !== null) {
+                                          var result1 = result12;
+                                        } else {
+                                          if (input.substr(pos, 2) === "SP") {
+                                            var result11 = "SP";
+                                            pos += 2;
+                                          } else {
+                                            var result11 = null;
+                                            if (reportMatchFailures) {
+                                              matchFailed("\"SP\"");
+                                            }
+                                          }
+                                          if (result11 !== null) {
+                                            var result1 = result11;
+                                          } else {
+                                            if (input.substr(pos, 2) === "pc") {
+                                              var result10 = "pc";
+                                              pos += 2;
+                                            } else {
+                                              var result10 = null;
+                                              if (reportMatchFailures) {
+                                                matchFailed("\"pc\"");
+                                              }
+                                            }
+                                            if (result10 !== null) {
+                                              var result1 = result10;
+                                            } else {
+                                              if (input.substr(pos, 2) === "PC") {
+                                                var result9 = "PC";
+                                                pos += 2;
+                                              } else {
+                                                var result9 = null;
+                                                if (reportMatchFailures) {
+                                                  matchFailed("\"PC\"");
+                                                }
+                                              }
+                                              if (result9 !== null) {
+                                                var result1 = result9;
+                                              } else {
+                                                if (input.substr(pos, 4) === "push") {
+                                                  var result8 = "push";
+                                                  pos += 4;
+                                                } else {
+                                                  var result8 = null;
+                                                  if (reportMatchFailures) {
+                                                    matchFailed("\"push\"");
+                                                  }
+                                                }
+                                                if (result8 !== null) {
+                                                  var result1 = result8;
+                                                } else {
+                                                  if (input.substr(pos, 4) === "PUSH") {
+                                                    var result7 = "PUSH";
+                                                    pos += 4;
+                                                  } else {
+                                                    var result7 = null;
+                                                    if (reportMatchFailures) {
+                                                      matchFailed("\"PUSH\"");
+                                                    }
+                                                  }
+                                                  if (result7 !== null) {
+                                                    var result1 = result7;
+                                                  } else {
+                                                    if (input.substr(pos, 3) === "pop") {
+                                                      var result6 = "pop";
+                                                      pos += 3;
+                                                    } else {
+                                                      var result6 = null;
+                                                      if (reportMatchFailures) {
+                                                        matchFailed("\"pop\"");
+                                                      }
+                                                    }
+                                                    if (result6 !== null) {
+                                                      var result1 = result6;
+                                                    } else {
+                                                      if (input.substr(pos, 3) === "POP") {
+                                                        var result5 = "POP";
+                                                        pos += 3;
+                                                      } else {
+                                                        var result5 = null;
+                                                        if (reportMatchFailures) {
+                                                          matchFailed("\"POP\"");
+                                                        }
+                                                      }
+                                                      if (result5 !== null) {
+                                                        var result1 = result5;
+                                                      } else {
+                                                        if (input.substr(pos, 4) === "peek") {
+                                                          var result4 = "peek";
+                                                          pos += 4;
+                                                        } else {
+                                                          var result4 = null;
+                                                          if (reportMatchFailures) {
+                                                            matchFailed("\"peek\"");
+                                                          }
+                                                        }
+                                                        if (result4 !== null) {
+                                                          var result1 = result4;
+                                                        } else {
+                                                          if (input.substr(pos, 4) === "PEEK") {
+                                                            var result3 = "PEEK";
+                                                            pos += 4;
+                                                          } else {
+                                                            var result3 = null;
+                                                            if (reportMatchFailures) {
+                                                              matchFailed("\"PEEK\"");
+                                                            }
+                                                          }
+                                                          if (result3 !== null) {
+                                                            var result1 = result3;
+                                                          } else {
+                                                            var result1 = null;;
+                                                          };
+                                                        };
+                                                      };
+                                                    };
+                                                  };
+                                                };
+                                              };
+                                            };
+                                          };
+                                        };
+                                      };
+                                    };
+                                  };
+                                };
+                              };
+                            };
+                          };
+                        };
+                      };
+                    };
+                  };
+                };
+              };
+            };
+          };
+        }
+        var result2 = result1 !== null
+          ? (function(special) { return special.toLowerCase(); })(result1)
+          : null;
+        if (result2 !== null) {
+          var result0 = result2;
+        } else {
+          var result0 = null;
+          pos = savedPos0;
+        }
+        
+        
+        
+        cache[cacheKey] = {
+          nextPos: pos,
+          result:  result0
+        };
+        return result0;
+      }
+      
+      function parse_other() {
+        var cacheKey = 'other@' + pos;
         var cachedResult = cache[cacheKey];
         if (cachedResult) {
           pos = cachedResult.nextPos;

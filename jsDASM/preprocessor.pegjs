@@ -7,10 +7,10 @@ dasm
     }
 
 op2
-    = _ instr:instr2 _ op1:operand _ "," _ op2:operand _ {return instr + " " + op1 + ", " + op2 + "\n"}
+    = _ instr:instr2 _ op1:operand _ "," _ op2:operand _ {return instr.toLowerCase() + " " + op1 + ", " + op2 + "\n"}
 
 op1
-    = _ instr:instr1 _ op:operand _ {return instr + " " + op + "\n";}
+    = _ instr:instr1 _ op:operand _ {return instr.toLowerCase() + " " + op + "\n";}
 
 label
     = _ ":" symbol:symbol _ { console.log("label",symbol); return ":" + symbol + "\n";}
@@ -66,26 +66,45 @@ macrocall
     }
 
 instr2
-    = "set"
-    / "add"
-    / "sub"
-    / "mul"
-    / "div"
-    / "mod"
-    / "shl"
-    / "shr"
-    / "and"
-    / "bor"
-    / "xor"
-    / "ife"
-    / "ifn"
-    / "ifg"
-    / "ifb"
+    = "set" / "SET"
+    / "add" / "ADD"
+    / "sub" / "SUB"
+    / "mul" / "MUL"
+    / "div" / "DIV"
+    / "mod" / "MOD"
+    / "shl" / "SHL"
+    / "shr" / "SHR"
+    / "and" / "AND"
+    / "bor" / "BOR"
+    / "xor" / "XOR"
+    / "ife" / "IFE"
+    / "ifn" / "IFN"
+    / "ifg" / "IFG"
+    / "ifb" / "IFB"
 
 instr1
-    = "dat" / "jsr"
+    = "dat" / "DAT"
+      "jsr" / "JSR"
 
 symbol
+    = special / other
+
+special
+    = special:("a" / "A"
+    /"b" / "B"
+    /"c" / "C"
+    /"x" / "X"
+    /"y" / "Y"
+    /"z" / "Z"
+    /"i" / "I"
+    /"j" / "J"
+    /"sp" / "SP"
+    /"pc" / "PC"
+    /"push" / "PUSH"
+    /"pop" / "POP"
+    /"peek" / "PEEK") { return special.toLowerCase(); }
+
+other
     =   first:[a-zA-Z_] rest:[a-zA-Z0-9_]* { return first + rest.join("");}
 
 operand
