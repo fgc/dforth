@@ -63,7 +63,61 @@
   </head>
   <body>
     <textarea id="macro" cols="20" rows="20"></textarea>
-    <textarea id="code" cols="30" rows="20"></textarea>
+    <textarea id="code" cols="30" rows="20">
+      set a, 0
+set b, 0
+set c, 0
+set x, 0xb000
+:loop
+ife [0x9000 + c], 0
+set pc, loop
+set b, [0x9000 + c]
+set [0x9000 + c], 0
+add c, 1
+and c, 15
+ife b, 8
+set pc, bkspc
+ife b, 37
+set pc, left
+ife b, 39
+set pc, right
+ife b, 38
+set pc, up
+ife b, 40
+set pc, down
+ife b, 0x0D
+set pc, enter
+set [0x8000 + a], b
+add a, 1
+ifg a, 383
+set a, 0
+set pc, loop
+:bkspc
+ife a, 0
+set pc, loop
+sub a, 1
+set [0x8000 + a], 0
+set pc, loop
+:right
+add a, 1
+set pc, loop
+:left
+sub a, 2
+set pc, loop
+:up
+sub a, 33
+set pc, loop
+:down
+add a, 32
+set pc, loop
+:enter
+add a, 0x0020
+set z, a
+mod z, 0x0020
+sub a, z
+add b, 1
+set pc, loop
+    </textarea>
     <input type="button" name="preprocess" value="Preprocess" onclick="preprocess()">
     <input type="button" name="load" value="Load" onclick="load()">
     <input type="button" name="run" value="Run" onclick="run()">

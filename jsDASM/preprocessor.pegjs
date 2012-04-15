@@ -7,7 +7,7 @@ dasm
     }
 
 op2
-    = _ instr:instr2 _ op1:operand _ "," _ op2:operand _ {return instr.toLowerCase() + " " + op1 + ", " + op2 + "\n"}
+    = _ instr:instr2 _ op1:operand _ op2:operand _ {return instr.toLowerCase() + " " + op1 + ", " + op2 + "\n"}
 
 op1
     = _ instr:instr1 _ op:operand _ {return instr.toLowerCase() + " " + op + "\n";}
@@ -85,10 +85,10 @@ instr2
 instr1
     = instr1:("jsr" / "JSR") !identifierchar { return instr1; }
 
-dat = ("dat" /  "DAT") !identifierchar _ first:(literal / identifier / str) _ rest:("," _ (literal / identifier / str) _)* {
+dat = ("dat" /  "DAT") !identifierchar _ first:(literal / identifier / str) _ rest:((literal / identifier / str) _)* {
     var r = "dat " + first + "\n";
     for (d in rest) {
-	r += "dat " + rest[d][2] + "\n";
+	r += "dat " + rest[d][0] + "\n";
     }
     return r;
 }
@@ -149,7 +149,6 @@ literal
 str
     = "\"" str:(!unscapedquote anycharacter)* last:unscapedquote {
 	var r = "";
-	console.log(str);
 	for (var c in str) {
 	    r += str[c][1];
 	}
@@ -160,12 +159,12 @@ unscapedquote
     = last:[^\\] "\"" {return last;}
 
 _ 
-  = ( whitespace / lineterminator / linecomment )* 
+    = ( whitespace / lineterminator / linecomment )* 
 whitespace 
-  = [\t\v\f \u00A0\uFEFF] 
+    = [\t\v\f \u00A0\uFEFF,] 
 lineterminator 
   = [\n\r] 
 linecomment 
-    = ";" comment:(!lineterminator anycharacter)* {console.log("Strip comment", "["+comment.join("")+"]");}
+    = ";" comment:(!lineterminator anycharacter)*
 anycharacter 
-  = . 
+  = .
