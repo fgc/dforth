@@ -295,7 +295,6 @@ set pc, start
 	jsr _KEY
 
 	set b, [cursorpos] 	;echo
-	bor a, 0xA000
 	set [0x8000 + b], a
 	add [cursorpos], 1
 	

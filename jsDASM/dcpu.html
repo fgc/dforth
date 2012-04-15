@@ -11,18 +11,15 @@
       -moz-border-radius: 25px;
       border-radius: 25px;
       border-style: solid;
-      border-color: #0b0b0b;
+      border-color: #141b0b;
       border-width: 25px;
-      }
-      #crtbg {
-      background-color: #f00;
-      height: 400px;
       }
     </style>
     <script src="dasm.js"></script>
     <script src="dscheme.js"></script>
     <script src="dcpu.js"></script>
     <script src="crtplugin.js"></script>
+    <script src="keyboardplugin.js"></script>
     <script src="preprocessor.js"></script>
     <script>
       window.onload = function() {
@@ -33,6 +30,11 @@
       var crt = new DCPUCrt();
       crt.init("crt", "font.png");
       cpu.register_plugin(crt);
+
+      var keyboard = new DCPUKeyboard();
+      keyboard.init();
+      cpu.register_plugin(keyboard);
+
       };
       
       function load() {
@@ -62,9 +64,7 @@
     <input type="button" name="load" value="Load" onclick="load()">
     <input type="button" name="step" value="Step" onclick="dostep()">
     <input type="button" name="pre" value="Pre" onclick="pre()">
-    <div id="ctrbg">
-      <canvas id="crt" width="512" height="384"></canvas>
-    </div>
+    <canvas id="crt" width="512" height="384"></canvas>
     <div id="debug">Debug:<br></div>
   </body>
 </html>

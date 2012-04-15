@@ -1,6 +1,6 @@
 function DCPUCore() {
 
-    this._CPU_MHZ = 100;
+    this._CPU_HZ = 1000;
 
     this._OP_PART = 0xF; 
     this._AV_PART = 0x3F0;
@@ -253,41 +253,49 @@ DCPUCore.prototype._tget = function (target) {
 
 DCPUCore.prototype.tick = function () {
     var v = this.memory[this.pc++];
-    if (!this.stepover) {
-	this.lastpointer = undefined;
-	this.destpointer = undefined;
+    this.lastpointer = undefined;
+    this.destpointer = undefined;
+    
+    var op = (v & this._OP_PART) >>> this._OP_POS;
 	
-	var op = (v & this._OP_PART) >>> this._OP_POS;
-	
-	if (op == 0x0) {
-	    var nbop = (v & this._AV_PART) >>> this._AV_POS;
-	    var a = (v & this._BV_PART) >>> this._BV_POS;
-	    this._nbop(nbop, this._get(a));
+    if (op == 0x0) {
+	var nbop = (v & this._AV_PART) >>> this._AV_POS;
+	var a = (v & this._BV_PART) >>> this._BV_POS;
+	var aval = this._get(a);
+	if (!this.stepover) {
+	    this._nbop(nbop, aval);
 	}
 	else {
-
-	    var a = (v & this._AV_PART) >>> this._AV_POS;
-	    var b = (v & this._BV_PART) >>> this._BV_POS;
+	    this.stepover = false;
+	}
 	    
-	    var aval = this._get(a);
-	    if (this.lastpointer != undefined) {
-		this.destpointer = this.lastpointer;
-	    }
-	    var bval = this._get(b);
-	    
+    }
+    else {
+	
+	var a = (v & this._AV_PART) >>> this._AV_POS;
+	var b = (v & this._BV_PART) >>> this._BV_POS;
+	
+	var aval = this._get(a);
+	if (this.lastpointer != undefined) {
+	    this.destpointer = this.lastpointer;
+	}
+	var bval = this._get(b);
+	
+	if (!this.stepover) {
 	    var fval = this._op(op, aval, bval);
-	    
+	
 	    if (fval != undefined) {
 		fval = this._overflown(fval, true);
 		this._set(a, fval);
 	    }
 	}
-
-    }
-    else {
-	this.stepover = false; 
+	else {
+	    this.stepover = false;
+	}
     }
     
+
+
     for (var pi in this.plugins) {
 	this.plugins[pi].tick();
     }
@@ -305,19 +313,8 @@ DCPUCore.prototype.register_plugin = function (plugin) {
 };
     
 DCPUCore.prototype.run = function () {
-    this.tick();
-    var cdt = (new Date()).getTime() / 1000;
-    var dt = cdt - this.dt;
-    this.dt = cdt;
-    t = (1.0 / (this._CPU_MHZ + 1)) - dt;
-    if (t > .001) {
-	setTimeout("this.delayed(dt)", t);
-    }
-    return dt;
-};
-
-DCPUCore.prototype.delayed = function (dt) {
-    return dt;
+    var self = this;
+    setInterval(function() {self.tick();}, 1000 / this._CPU_HZ);
 };
 
 DCPUCore.prototype.__init__ = function () {
