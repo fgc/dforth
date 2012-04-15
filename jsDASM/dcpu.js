@@ -15,6 +15,22 @@ function DCPUCore() {
     this.plugins = [];
 }
 
+DCPUCore.prototype.setupfps = function(){
+    var lastTime = new Date();
+    var hits = 0;
+    var hit = function(){
+	hits++;
+	var nowTime = new Date();
+	if (nowTime.getTime() - lastTime.getTime() > 1000){
+	    var dt = nowTime.getTime() - lastTime.getTime();
+	    console.log("fps" + Math.round(hits * 1000 / dt));
+	    hits = 0;
+	    lastTime = nowTime;
+	}
+    };
+    return hit;
+};
+
 DCPUCore.prototype._buffer = function (size, value) {
     var b = new Uint16Array(size);
     for (i in b) {
@@ -41,7 +57,6 @@ DCPUCore.prototype._overflown = function (val) {
 };
 
 DCPUCore.prototype._nbop = function (nbop, a) {
-    console.log("nbop:", nbop, a);
     switch(nbop) {
     case 0x01: //JSR
 	--this.sp
@@ -118,7 +133,6 @@ DCPUCore.prototype._abort = function (message) {
 };
 
 DCPUCore.prototype._set = function (target,value) {
-    console.log("_set: " + target + " " + value);
     switch(target) {
     case 0:
     case 1:
@@ -198,7 +212,6 @@ DCPUCore.prototype._tget = function (target) {
     case 6:
     case 7:
 	return this.registers[target];
-	break;
     case 8:
     case 9:
     case 10:
@@ -208,7 +221,6 @@ DCPUCore.prototype._tget = function (target) {
     case 14:
     case 15:
 	return this.memory[this.registers[target-8]];
-	break;
     case 16:
     case 17:
     case 18:
@@ -219,39 +231,30 @@ DCPUCore.prototype._tget = function (target) {
     case 23:
 	this.lastpointer = this.memory[this.pc++] + this.registers[target-16];
 	return this.memory[this.lastpointer];
-	break;
     case 24:
 	return this.memory[this.sp++]; //stack can underflow into the start of RAM!!!
-	break;
     case 25:
 	return this.memory[this.sp];
-	break;
     case 26:
-	this._abort("CANNOT GET A VALUE FROM PUSH");
-	break;
+	return;
     case 27:
 	return this.sp;
-	break;
     case 28:
 	return this.pc;
-	break;
     case 29:
 	return O;
-	break;
     case 30:
 	this.lastpointer = this.memory[this.pc++];
         return this.memory[this.lastpointer];
-	break;
     case 31:
 	return this.memory[this.pc++];
-	break;
     default:
 	return (target-32);
-	break;
     }
 };
 
-DCPUCore.prototype.tick = function () {
+DCPUCore.prototype.tick = function (stepping) {
+    this.hit();
     var v = this.memory[this.pc++];
     this.lastpointer = undefined;
     this.destpointer = undefined;
@@ -295,10 +298,12 @@ DCPUCore.prototype.tick = function () {
     }
     
 
-
-    for (var pi in this.plugins) {
-	this.plugins[pi].tick();
+    if (this.count++ % 1000 == 0) {
+	for (var p in this.plugins) {
+	    this.plugins[p].tick();
+	}
     }
+
 };
 
 DCPUCore.prototype.load = function (buffer) {
@@ -314,11 +319,22 @@ DCPUCore.prototype.register_plugin = function (plugin) {
     
 DCPUCore.prototype.run = function () {
     var self = this;
-    setInterval(function() {self.tick();}, 1000 / this._CPU_HZ);
+
+    function dorun() {
+            for(var i = 0; i < 600; i++) {
+                self.tick();
+            }
+	    
+	    
+	setTimeout(dorun, 0);
+    }
+    
+    dorun();
 };
 
 DCPUCore.prototype.__init__ = function () {
     this._init_cpu(0x10000, 8);
     this.stepover = false;
-    this.dt = 0;
+    this.hit = this.setupfps();
+    this.count = 0;
 };

@@ -174,7 +174,7 @@ adrsymbol
     }
 
 regoffset
-    = offsetliteral:(hex / decimal) _ "+" _ register:symbol {
+    = offsetliteral:(hex / decimal / symbol) _ "+" _ register:symbol {
 	console.log("reg off addr: " , offsetliteral, "+", register);
 	return [register[0] + 16, offsetliteral];
     }

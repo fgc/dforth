@@ -1310,15 +1310,20 @@ dasm = (function(){
         
         var savedPos0 = pos;
         var savedPos1 = pos;
-        var result9 = parse_hex();
-        if (result9 !== null) {
-          var result3 = result9;
+        var result10 = parse_hex();
+        if (result10 !== null) {
+          var result3 = result10;
         } else {
-          var result8 = parse_decimal();
-          if (result8 !== null) {
-            var result3 = result8;
+          var result9 = parse_decimal();
+          if (result9 !== null) {
+            var result3 = result9;
           } else {
-            var result3 = null;;
+            var result8 = parse_symbol();
+            if (result8 !== null) {
+              var result3 = result8;
+            } else {
+              var result3 = null;;
+            };
           };
         }
         if (result3 !== null) {

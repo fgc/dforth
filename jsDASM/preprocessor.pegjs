@@ -2,7 +2,7 @@
     macros = {};
 }
 dasm
-    = lines:( op2 / op1 / label / defmacro / macrocall)+ {
+    = lines:( op2 / op1 / dat / label / defmacro / macrocall)+ {
 	return lines.join("");
     }
 
@@ -13,26 +13,26 @@ op1
     = _ instr:instr1 _ op:operand _ {return instr.toLowerCase() + " " + op + "\n";}
 
 label
-    = _ ":" symbol:symbol _ { console.log("label",symbol); return ":" + symbol + "\n";}
+    = _ ":" identifier:identifier _ { console.log("label",identifier); return ":" + identifier + "\n";}
 
 braced
-    = "{" parts:(braced / nonBraceCharacter)* "}" {
+    = "{" parts:(braced / nonbracecharacter)* "}" {
 	return parts.join("");
     }
 
-nonBraceCharacter
+nonbracecharacter
   = [^{}]
 
 bracketed
-    = "[" parts:(braced / nonBracketCharacter)* "]" {
+    = "[" parts:(braced / nonbracketcharacter)* "]" {
 	return parts.join("");
     }
 
-nonBracketCharacter
+nonbracketcharacter
     = [^\[\]]
 
 defmacro 
-    = _ "#defmacro" _ name:symbol _ "(" _ paramlist:(symbol _)* ")"_  body:braced  _ env:bracketed? _ {
+    = _ "#defmacro" _ name:identifier _ "(" _ paramlist:(identifier _)* ")"_  body:braced  _ env:bracketed? _ {
 	console.log("macro!");
 	console.log("name:", name,"params", paramlist, "body", body);
 	var paramstr = "";
@@ -60,78 +60,112 @@ macrobody
 
 
 macrocall
-    = _ name:symbol _ "("_ params:[^\)]* _")" _ {
+    = _ name:identifier _ "("_ params:[^\)]* _")" _ {
 	
 	return eval ("macros[\"" + name + "\"](" + params.join("")+")");
     }
 
 instr2
-    = "set" / "SET"
-    / "add" / "ADD"
-    / "sub" / "SUB"
-    / "mul" / "MUL"
-    / "div" / "DIV"
-    / "mod" / "MOD"
-    / "shl" / "SHL"
-    / "shr" / "SHR"
-    / "and" / "AND"
-    / "bor" / "BOR"
-    / "xor" / "XOR"
-    / "ife" / "IFE"
-    / "ifn" / "IFN"
-    / "ifg" / "IFG"
-    / "ifb" / "IFB"
+    = instr2:("set" / "SET"
+	      / "add" / "ADD"
+	      / "sub" / "SUB"
+	      / "mul" / "MUL"
+	      / "div" / "DIV"
+	      / "mod" / "MOD"
+	      / "shl" / "SHL"
+	      / "shr" / "SHR"
+	      / "and" / "AND"
+	      / "bor" / "BOR"
+	      / "xor" / "XOR"
+	      / "ife" / "IFE"
+	      / "ifn" / "IFN"
+	      / "ifg" / "IFG"
+	      / "ifb" / "IFB") !identifierchar { return instr2; }
 
 instr1
-    = "dat" / "DAT"
-      "jsr" / "JSR"
+    = instr1:("jsr" / "JSR") !identifierchar { return instr1; }
 
-symbol
-    = special / other
+dat = ("dat" /  "DAT") !identifierchar _ first:(literal / identifier / str) _ rest:("," _ (literal / identifier / str) _)* {
+    var r = "dat " + first + "\n";
+    for (d in rest) {
+	r += "dat " + rest[d][2] + "\n";
+    }
+    return r;
+}
 
-special
-    = special:("a" / "A"
+reserved
+    = register / instr1 / instr2 / dat / keyword
+
+register
+    = register:("a" / "A"
     /"b" / "B"
     /"c" / "C"
     /"x" / "X"
     /"y" / "Y"
     /"z" / "Z"
     /"i" / "I"
-    /"j" / "J"
-    /"sp" / "SP"
+    /"j" / "J") !identifierchar { 
+	console.log("Found register:",register); 
+	return register.toLowerCase(); 
+    }
+
+keyword
+    = keyword:("sp" / "SP"
     /"pc" / "PC"
     /"push" / "PUSH"
     /"pop" / "POP"
-    /"peek" / "PEEK") { return special.toLowerCase(); }
+    /"peek" / "PEEK") !identifierchar { 
+	console.log("Found keyword:",keyword); 
+	return keyword.toLowerCase(); 
+    }
 
-other
-    =   first:[a-zA-Z_] rest:[a-zA-Z0-9_]* { return first + rest.join("");}
+identifier
+    =  !reserved identifier:identifiername { return identifier;}
+
+identifiername
+    = first:identifierfirstchar rest:identifierchar* {
+	return first + rest.join("");
+    }
+
+identifierfirstchar
+    = [a-zA-Z_]
+
+identifierchar
+    = [a-zA-Z0-9_]
 
 operand
-    = symbol / literal / address
+    = register/ keyword / identifier / literal / address
 
 address
-    = "[" _ literal:literal _ "+" _ symbol:symbol _ "]" {return "[" + literal + " + " + symbol + "]";}
-    / "[" _ literal:literal _ "]" {return "[" + literal + "]";}
-    / "[" _ symbol:symbol _ "]" {return "[" + symbol + "]";}
+    = "[" _ literal:literal _ "+" _ register:register _ "]" {return "[" + literal + " + " + register + "]";}
+    / "[" _ register:register _ "+" _ literal:literal _ "]" {return "[" + literal + " + " + register + "]";}
+    / "[" _ identifier:identifier _ "+" _ register:register _ "]" {return "[" + identifier + " + " + register + "]";}
+    / "[" _ register:register _ "+" _ identifier:identifier _ "]" {return "[" + identifier + " + " + register + "]";}
+    / "[" _ address:(register / identifier / literal) _ "]" {return "[" + address + "]";}
 
 literal
     = digits:[0-9A-Fa-fx]+ {return digits.join("");}
-/*
-_ "whitespace"
-  = whitespace*
 
-whitespace
-  = [ \t\n\r]
-*/
+str
+    = "\"" str:(!unscapedquote anycharacter)* last:unscapedquote {
+	var r = "";
+	console.log(str);
+	for (var c in str) {
+	    r += str[c][1];
+	}
+	return "\"" + r + last  +"\""; 
+    }
+
+unscapedquote
+    = last:[^\\] "\"" {return last;}
 
 _ 
-  = ( whiteSpace / lineTerminator / lineComment )* 
-whiteSpace 
+  = ( whitespace / lineterminator / linecomment )* 
+whitespace 
   = [\t\v\f \u00A0\uFEFF] 
-lineTerminator 
+lineterminator 
   = [\n\r] 
-lineComment 
-  = ";" (!lineTerminator anyCharacter)* 
-anyCharacter 
+linecomment 
+    = ";" comment:(!lineterminator anycharacter)* {console.log("Strip comment", "["+comment.join("")+"]");}
+anycharacter 
   = . 

@@ -46,8 +46,8 @@
       cpu.run();
       }
 
-      function step() {
-          cpu.tick();
+      function dostep() {
+          cpu.tick(true);
           document.getElementById("debug").innerHTML = "pc: " + cpu.pc + "<br>";
           document.getElementById("debug").innerHTML += "sp: " + cpu.sp + "<br>";
           document.getElementById("debug").innerHTML += "o: " + cpu.o + "<br>";
@@ -67,7 +67,7 @@
     <input type="button" name="preprocess" value="Preprocess" onclick="preprocess()">
     <input type="button" name="load" value="Load" onclick="load()">
     <input type="button" name="run" value="Run" onclick="run()">
-    <input type="button" name="step" value="Step" onclick="step()">
+    <input type="button" name="dostep" value="Step" onclick="dostep()">
     <canvas id="crt" width="512" height="384"></canvas>
     <div id="debug">Debug:<br></div>
   </body>
